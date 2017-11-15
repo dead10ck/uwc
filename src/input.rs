@@ -3,7 +3,7 @@ use std::io::{self, Read};
 use std::path::Path;
 
 /// The string used to identify stdin.
-pub const STDIN_IDENTIFIER : &str = "-";
+pub const STDIN_IDENTIFIER: &str = "-";
 
 /// Choose between a regular file and stdin.
 pub enum Input {
@@ -12,7 +12,7 @@ pub enum Input {
 }
 
 impl Input {
-    pub fn new<P: AsRef<Path>>(path : P) -> io::Result<Input> {
+    pub fn new<P: AsRef<Path>>(path: P) -> io::Result<Input> {
         let path = path.as_ref();
 
         if path.as_os_str() == STDIN_IDENTIFIER {

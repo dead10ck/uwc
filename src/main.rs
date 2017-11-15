@@ -67,7 +67,7 @@ fn run() -> io::Result<()> {
     // this has a default value, so it's ok to unwrap
     let file_names: Vec<_> = arg_matches.values_of("FILE").unwrap().collect();
 
-    let mut count : u64 = 0;
+    let mut count: u64 = 0;
     for file_name in file_names {
         let input = Input::new(file_name)?;
         let reader = BufReader::new(input);
