@@ -1,5 +1,5 @@
 [package]
-name = "rbc"
+name = "uwc"
 version = "0.1.0"
 authors = ["Skyler Hawthorne <skylerhawthorne@gmail.com>"]
 
@@ -7,6 +7,7 @@ authors = ["Skyler Hawthorne <skylerhawthorne@gmail.com>"]
 unicode-segmentation = "^1.2.0"
 log = "^0.3.8"
 env_logger = "^0.4.3"
+lazy_static = "^0.2.10"
 
 [dependencies.clap]
 version = "^2.27.1"
