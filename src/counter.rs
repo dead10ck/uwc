@@ -65,6 +65,8 @@ pub enum Counter {
 
 /// Counts the given `Counter`s in the given `&str`.
 pub fn count(counters: &[Counter], s: &str) -> HashMap<Counter, usize> {
+    debug!("counting '{}' with counters: {:#?}", s, counters);
+
     let mut counts: HashMap<Counter, usize> = counters.iter().map(|c| (*c, c.count(s))).collect();
 
     // there should always be at least one line
@@ -73,6 +75,7 @@ pub fn count(counters: &[Counter], s: &str) -> HashMap<Counter, usize> {
         *count += 1;
     }
 
+    debug!("counted: {:#?}", counts);
     counts
 }
 

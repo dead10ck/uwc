@@ -4,23 +4,26 @@ extern crate log;
 #[macro_use]
 extern crate lazy_static;
 
+#[macro_use]
+extern crate structopt_derive;
+extern crate structopt;
+
 extern crate env_logger;
-extern crate clap;
 extern crate unicode_segmentation;
 
 mod input;
 mod counter;
+mod opt;
 
+use std::collections::HashMap;
 use std::io;
 use std::io::{BufRead, BufReader};
 
-use clap::{Arg, App, SubCommand};
-use unicode_segmentation::UnicodeSegmentation;
+use structopt::StructOpt;
 
+use counter::Counter;
 use input::Input;
-
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
+use opt::Opt;
 
 fn main() {
     env_logger::init().unwrap();
@@ -32,57 +35,32 @@ fn main() {
 }
 
 fn run() -> io::Result<()> {
-    let arg_matches = App::new("rbc")
-        .version(VERSION)
-        .author(AUTHORS)
-        .about("Counts things in text")
-        .arg(
-            Arg::with_name("grapheme-clusters")
-                .short("c")
-                .long("grapheme-clusters")
-                .help("Counts the grapheme clusters")
-                .long_help(
-                    "Counts the grapheme clusters—what you might think \
-                           of as a 'character.'",
-                ),
-        )
-        .arg(
-            Arg::with_name("FILE")
-                .help("Sets the input file to use")
-                .multiple(true)
-                .default_value("-")
-                .index(1),
-        )
-        /*
-        .subcommand(
-            SubCommand::with_name("test")
-                .about("controls testing features")
-                .version("1.3")
-                .author("Someone E. <someone_else@other.com>")
-                .arg(Arg::with_name("debug").short("d").help(
-                    "print debug information verbosely",
-                )),
-        )
-        */
-        .get_matches();
+    let opts = Opt::from_args();
 
-    debug!("matches: {:?}", arg_matches);
+    debug!("opts: {:?}", opts);
 
-    // this has a default value, so it's ok to unwrap
-    let file_names: Vec<_> = arg_matches.values_of("FILE").unwrap().collect();
+    let counters = opts.get_counters();
+    let mut final_counts: HashMap<Counter, usize> = counters.iter().map(|c| (*c, 0)).collect();
 
-    let mut count: u64 = 0;
-    for file_name in file_names {
+    for file_name in opts.files {
         let input = Input::new(file_name)?;
         let reader = BufReader::new(input);
 
         for line in reader.lines() {
             let line = line?;
-            count += line.graphemes(true).count() as u64;
+            debug!("line: {:?}", line);
+
+            let cur_counts = counter::count(&counters, &line);
+
+            for (counter, cur_count) in cur_counts {
+                // Unwrap is ok since this map is constructed with the counters.
+                let count = final_counts.get_mut(&counter).unwrap();
+                *count += cur_count;
+            }
         }
     }
 
-    println!("grapheme clusters: {}", count);
+    info!("final_counts: {:?}", final_counts);
 
     Ok(())
 }
