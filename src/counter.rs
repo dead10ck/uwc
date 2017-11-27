@@ -26,11 +26,27 @@ lazy_static! {
     };
 }
 
-/// Counts things in `&str`s.
-//pub trait Count {
-///// Counts something inside the given `&str`.
-//fn count(&self, counters: &[Counter], s: &str) -> HashMap<Counter, u64>;
-//}
+/// Something that counts things in `&str`s.
+pub trait Count {
+    /// Counts something in the given `&str`.
+    fn count(&self, s: &str) -> usize;
+}
+
+impl Count for Counter {
+    fn count(&self, s: &str) -> usize {
+        match *self {
+            Counter::GraphemeCluster => s.graphemes(true).count(),
+            Counter::NumByte => s.len(),
+            Counter::Line => {
+                s.graphemes(true)
+                    .filter(|grapheme| NEWLINES.contains(grapheme))
+                    .count()
+            }
+            Counter::Words => s.unicode_words().count(),
+        }
+    }
+}
+
 /// Different types of counters.
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub enum Counter {
@@ -42,24 +58,14 @@ pub enum Counter {
 
     /// Counts lines.
     Line,
+
+    /// Counts words.
+    Words,
 }
 
 /// Counts the given `Counter`s in the given `&str`.
-pub fn count(counters: &[Counter], s: &str) -> HashMap<Counter, u64> {
-    let mut counts: HashMap<Counter, u64> = HashMap::new();
-
-    for grapheme in s.graphemes(true) {
-        counters.iter().for_each(|c| {
-            let count : u64 = match *c {
-                Counter::GraphemeCluster => 1,
-                Counter::NumByte => grapheme.len() as u64,
-                Counter::Line => if NEWLINES.contains(grapheme) { 1 } else { 0 },
-            };
-
-            let entry = counts.entry(*c).or_insert(0u64);
-            *entry += count;
-        })
-    }
+pub fn count(counters: &[Counter], s: &str) -> HashMap<Counter, usize> {
+    let mut counts: HashMap<Counter, usize> = counters.iter().map(|c| (*c, c.count(s))).collect();
 
     // there should always be at least one line
     if let Entry::Occupied(e) = counts.entry(Counter::Line) {
@@ -88,13 +94,19 @@ mod test {
     #[test]
     fn test_count_hello() {
         let s = "hello";
-        let counters = [ Counter::GraphemeCluster, Counter::Line, Counter::NumByte ];
+        let counters = [
+            Counter::GraphemeCluster,
+            Counter::Line,
+            Counter::NumByte,
+            Counter::Words,
+        ];
         let counts = count(&counters[..], s);
 
         let mut correct_counts = HashMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 5);
         correct_counts.insert(Counter::Line, 1);
         correct_counts.insert(Counter::NumByte, 5);
+        correct_counts.insert(Counter::Words, 1);
 
         assert_eq!(correct_counts, counts);
     }
@@ -129,13 +141,46 @@ mod test {
             debug!("grapheme: {}", grapheme);
         }
 
-        let counters = [ Counter::GraphemeCluster, Counter::Line, Counter::NumByte ];
+        let counters = [
+            Counter::GraphemeCluster,
+            Counter::Line,
+            Counter::NumByte,
+            Counter::Words,
+        ];
         let counts = count(&counters[..], &s);
 
         let mut correct_counts = HashMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 23);
         correct_counts.insert(Counter::Line, 9);
         correct_counts.insert(Counter::NumByte, 29);
+        correct_counts.insert(Counter::Words, 5);
+
+        assert_eq!(correct_counts, counts);
+    }
+
+    #[test]
+    fn test_count_counts_words() {
+        let _ = env_logger::init();
+
+        let i_can_eat_glass = "Μπορῶ νὰ φάω σπασμένα γυαλιὰ χωρὶς νὰ πάθω τίποτα.";
+        let s = String::from(i_can_eat_glass);
+
+        //debug!("words: {:?}", i_can_eat_glass.unicode_words().collect::<Vec<&str>>());
+
+        let counters = [
+            Counter::GraphemeCluster,
+            Counter::Line,
+            Counter::NumByte,
+            Counter::Words,
+        ];
+
+        let counts = count(&counters[..], &s);
+
+        let mut correct_counts = HashMap::new();
+        correct_counts.insert(Counter::GraphemeCluster, 50);
+        correct_counts.insert(Counter::Line, 1);
+        correct_counts.insert(Counter::NumByte, i_can_eat_glass.len());
+        correct_counts.insert(Counter::Words, 9);
 
         assert_eq!(correct_counts, counts);
     }
