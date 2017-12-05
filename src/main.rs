@@ -8,12 +8,18 @@ extern crate lazy_static;
 extern crate structopt_derive;
 extern crate structopt;
 
+#[macro_use]
+extern crate failure_derive;
+extern crate failure;
+
 extern crate env_logger;
 extern crate unicode_segmentation;
 
 mod input;
 mod counter;
 mod opt;
+mod ubufreader;
+mod error;
 
 use std::collections::HashMap;
 use std::io;
