@@ -14,6 +14,7 @@ extern crate failure;
 
 extern crate env_logger;
 extern crate unicode_segmentation;
+extern crate encoding_rs;
 
 mod input;
 mod counter;

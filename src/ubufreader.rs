@@ -1,7 +1,10 @@
+use std;
 use std::io;
 use std::io::BufRead;
+use std::string::FromUtf8Error;
 
 use error::{UwcError, Result};
+use encoding_rs::{UTF_8, Decoder, DecoderResult};
 
 /// An iterator over `&str`s read from a `BufRead`.
 pub struct UStrChunksIter<'a, R: BufRead + 'a> {
@@ -12,11 +15,18 @@ pub struct UStrChunksIter<'a, R: BufRead + 'a> {
     /// will become false if the underlying reader has been closed, or some
     /// error has occurred.
     keep_reading: bool,
+
+    /// The byte stream decoder.
+    decoder: Decoder,
 }
 
 impl<'a, R: BufRead> UStrChunksIter<'a, R> {
     pub fn new(reader: &'a mut R) -> UStrChunksIter<'a, R> {
-        UStrChunksIter{ reader, keep_reading: true }
+        UStrChunksIter {
+            reader,
+            keep_reading: true,
+            decoder: UTF_8.new_decoder(),
+        }
     }
 }
 
@@ -28,7 +38,7 @@ impl<'a, R: BufRead> Iterator for UStrChunksIter<'a, R> {
             return None;
         }
 
-        let mut data = Vec::new();
+        let mut output : String;
 
         {
             let buf = match self.reader.fill_buf() {
@@ -47,23 +57,82 @@ impl<'a, R: BufRead> Iterator for UStrChunksIter<'a, R> {
                 }
             };
 
+            debug!("Read buf: {:?}", buf);
+
+            output = String::with_capacity(buf.len());
+
             if buf.len() == 0 {
                 self.keep_reading = false;
-                return None;
             }
 
-            data.extend(buf);
+            let (decode_result, bytes_read) = self.decoder.decode_to_string_without_replacement(
+                buf,
+                &mut output,
+                !self.keep_reading,
+            );
+
+            // TODO: handle results of this call
+
+            debug!("decode result: ({:?}, {})", decode_result, bytes_read);
+
+            match decode_result {
+                DecoderResult::Malformed(err_len, extra_bits) => {
+                    self.keep_reading = false;
+                    let mut error_data = Vec::new();
+                    error_data.copy_from_slice(buf);
+
+                    return Some(Err(UwcError::MalformedInputError{
+                        input: error_data,
+                        start_error_index: bytes_read - extra_bits as usize - err_len as usize,
+                    }))
+                },
+
+                DecoderResult::OutputFull => {
+
+                }
+
+                _ => {},
+            }
         }
 
-        let string = match String::from_utf8(data) {
-            Ok(s) => s,
-            Err(e) => return Some(Err(UwcError::Utf8Error(e))),
-        };
+        // if there is no data, return None instead of a blank string
+        if output.len() == 0 {
+            return None;
+        }
 
-        self.reader.consume(string.len());
+        self.reader.consume(output.len());
 
-        Some(Ok(string))
+        Some(Ok(output))
     }
+}
+
+/// Attempts to convert the given bytes into a UTF-8 String. It will return the
+/// longest valid String inside the given byte vector, discarding any trailing
+/// bytes that are invalid or form an incomplete UTF-8 grapheme cluster.
+fn from_utf8_longest_valid(data: Vec<u8>) -> std::result::Result<String, FromUtf8Error> {
+    // Attempt to convert the bytes to a String. If it's immediately successful,
+    // just return it straight away. Otherwise, collect the error to see up to
+    // what point it was valid.
+    let error = match String::from_utf8(data) {
+        Ok(s) => return Ok(s),
+        Err(e) => e,
+    };
+
+    let valid_up_to = error.utf8_error().valid_up_to();
+
+    // if not even the first byte was valid, then just return the original error
+    if valid_up_to <= 0 {
+        return Err(error);
+    }
+
+    // get the bytes back from the error
+    let mut data = error.into_bytes();
+
+    // discard everything up to the first invalid byte
+    data.truncate(valid_up_to);
+
+    // try to convert again
+    String::from_utf8(data)
 }
 
 #[cfg(test)]
@@ -89,6 +158,7 @@ mod test {
 
     #[test]
     fn test_basic_buffered() {
+        let _ = env_logger::init();
         let cursor = io::Cursor::new(b"hello");
         let mut reader = BufReader::with_capacity(3, cursor);
         let mut chunks = UStrChunksIter::new(&mut reader);
@@ -100,6 +170,8 @@ mod test {
 
     #[test]
     fn test_buffered_stops_in_middle() {
+        let _ = env_logger::init();
+
         // 😬 is 4 bytes
         let cursor = io::Cursor::new("hello 😬 whoops".as_bytes());
 
@@ -109,6 +181,31 @@ mod test {
 
         assert_eq!("hello ", chunks.next().unwrap().unwrap());
         assert_eq!("😬 whoops", chunks.next().unwrap().unwrap());
+        assert!(chunks.next().is_none());
+        assert!(chunks.next().is_none());
+    }
+
+    #[test]
+    fn test_buffered_stops_in_middle_japanese() {
+        let _ = env_logger::init();
+
+        let cursor = io::Cursor::new(
+            "私はガラスを食べられます。それは私を傷つけません。"
+                .as_bytes(),
+        );
+
+        let mut reader = BufReader::with_capacity(10, cursor);
+        let mut chunks = UStrChunksIter::new(&mut reader);
+
+        assert_eq!("私はガ", chunks.next().unwrap().unwrap());
+        assert_eq!("ラスを", chunks.next().unwrap().unwrap());
+        assert_eq!("食べら", chunks.next().unwrap().unwrap());
+        assert_eq!("れます", chunks.next().unwrap().unwrap());
+        assert_eq!("。それ", chunks.next().unwrap().unwrap());
+        assert_eq!("は私を", chunks.next().unwrap().unwrap());
+        assert_eq!("傷つけ", chunks.next().unwrap().unwrap());
+        assert_eq!("ません", chunks.next().unwrap().unwrap());
+        assert_eq!("。", chunks.next().unwrap().unwrap());
         assert!(chunks.next().is_none());
         assert!(chunks.next().is_none());
     }

@@ -12,6 +12,7 @@ structopt = "^0.1"
 structopt-derive = "^0.1"
 failure = "^0.1.1"
 failure_derive = "^0.1.1"
+encoding_rs = "^0.7.1"
 
 [profile.release]
 debug = true
