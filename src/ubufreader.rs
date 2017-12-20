@@ -3,7 +3,13 @@ use std::io::BufRead;
 
 use error::{UwcError, Result};
 
-/// An iterator over `&str`s read from a `BufRead`.
+/// An iterator over `&str`s read from a `BufRead`. For now, it reads lines,
+/// similar to `BufRead::lines`, but it includes the newline character for
+/// accurate counts.
+//
+// In the future, this should attempt to be more memory-stable by chunking by a
+// fixed size, or close to a fixed size, that splits on grapheme cluster
+// boundaries.
 pub struct UStrChunksIter<'a, R: BufRead + 'a> {
     /// The `BufRead` to read from.
     pub reader: &'a mut R,
@@ -28,41 +34,22 @@ impl<'a, R: BufRead> Iterator for UStrChunksIter<'a, R> {
             return None;
         }
 
-        let mut data = Vec::new();
+        let mut output = String::new();
 
-        {
-            let buf = match self.reader.fill_buf() {
-                Ok(b) => b,
-                Err(e) => {
-                    match e.kind() {
-                        io::ErrorKind::BrokenPipe => {
-                            self.keep_reading = false;
-                            return None;
-                        }
-                        _ => {
-                            self.keep_reading = false;
-                            return Some(Err(UwcError::IoError(e)));
-                        }
-                    }
-                }
-            };
-
-            if buf.len() == 0 {
+        let read_bytes = match self.reader.read_line(&mut output) {
+            Ok(b) => b,
+            Err(e) => {
                 self.keep_reading = false;
-                return None;
+                return Some(Err(UwcError::IoError(e)));
             }
-
-            data.extend(buf);
-        }
-
-        let string = match String::from_utf8(data) {
-            Ok(s) => s,
-            Err(e) => return Some(Err(UwcError::Utf8Error(e))),
         };
 
-        self.reader.consume(string.len());
+        if read_bytes == 0 {
+            self.keep_reading = false;
+            return None;
+        }
 
-        Some(Ok(string))
+        Some(Ok(output))
     }
 }
 
@@ -88,6 +75,21 @@ mod test {
     }
 
     #[test]
+    fn test_chunks_by_newline() {
+        let _ = env_logger::init();
+        let mut cursor = io::Cursor::new(b"hello\ngoodbye\r\nwindows?");
+        let mut chunks = UStrChunksIter::new(&mut cursor);
+        assert_eq!("hello\n", chunks.next().unwrap().unwrap());
+        assert_eq!("goodbye\r\n", chunks.next().unwrap().unwrap());
+        assert_eq!("windows?", chunks.next().unwrap().unwrap());
+
+        assert!(chunks.next().is_none());
+        assert!(chunks.next().is_none());
+    }
+
+    // TODO: Run these tests when the iterator does not chunk by newlines any more.
+    #[test]
+    #[ignore]
     fn test_basic_buffered() {
         let cursor = io::Cursor::new(b"hello");
         let mut reader = BufReader::with_capacity(3, cursor);
@@ -98,7 +100,9 @@ mod test {
         assert!(chunks.next().is_none());
     }
 
+    // TODO: Run these tests when the iterator does not chunk by newlines any more.
     #[test]
+    #[ignore]
     fn test_buffered_stops_in_middle() {
         // 😬 is 4 bytes
         let cursor = io::Cursor::new("hello 😬 whoops".as_bytes());
@@ -109,6 +113,34 @@ mod test {
 
         assert_eq!("hello ", chunks.next().unwrap().unwrap());
         assert_eq!("😬 whoops", chunks.next().unwrap().unwrap());
+        assert!(chunks.next().is_none());
+        assert!(chunks.next().is_none());
+    }
+
+
+    // TODO: Run these tests when the iterator does not chunk by newlines any more.
+    #[test]
+    #[ignore]
+    fn test_buffered_stops_in_middle_japanese() {
+        let _ = env_logger::init();
+
+        let cursor = io::Cursor::new(
+            "私はガラスを食べられます。それは私を傷つけません。"
+                .as_bytes(),
+        );
+
+        let mut reader = BufReader::with_capacity(10, cursor);
+        let mut chunks = UStrChunksIter::new(&mut reader);
+
+        assert_eq!("私はガ", chunks.next().unwrap().unwrap());
+        assert_eq!("ラスを", chunks.next().unwrap().unwrap());
+        assert_eq!("食べら", chunks.next().unwrap().unwrap());
+        assert_eq!("れます", chunks.next().unwrap().unwrap());
+        assert_eq!("。それ", chunks.next().unwrap().unwrap());
+        assert_eq!("は私を", chunks.next().unwrap().unwrap());
+        assert_eq!("傷つけ", chunks.next().unwrap().unwrap());
+        assert_eq!("ません", chunks.next().unwrap().unwrap());
+        assert_eq!("。", chunks.next().unwrap().unwrap());
         assert!(chunks.next().is_none());
         assert!(chunks.next().is_none());
     }

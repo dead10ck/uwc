@@ -22,14 +22,17 @@ mod ubufreader;
 mod error;
 
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::io;
 use std::io::{BufRead, BufReader};
 
 use structopt::StructOpt;
+use failure::Error;
 
 use counter::Counter;
 use input::Input;
 use opt::Opt;
+use ubufreader::UStrChunksIter;
 
 fn main() {
     env_logger::init().unwrap();
@@ -40,7 +43,7 @@ fn main() {
     }
 }
 
-fn run() -> io::Result<()> {
+fn run() -> Result<(), Error> {
     let opts = Opt::from_args();
 
     debug!("opts: {:?}", opts);
@@ -50,9 +53,10 @@ fn run() -> io::Result<()> {
 
     for file_name in opts.files {
         let input = Input::new(file_name)?;
-        let reader = BufReader::new(input);
+        let mut reader = BufReader::new(input);
+        let chunks = UStrChunksIter::new(&mut reader);
 
-        for line in reader.lines() {
+        for line in chunks {
             let line = line?;
             debug!("line: {:?}", line);
 

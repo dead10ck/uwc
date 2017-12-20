@@ -1,6 +1,5 @@
 use std::str;
 use std::collections::{HashSet, HashMap};
-use std::collections::hash_map::Entry;
 
 use env_logger;
 use unicode_segmentation::UnicodeSegmentation;
@@ -67,13 +66,7 @@ pub enum Counter {
 pub fn count(counters: &[Counter], s: &str) -> HashMap<Counter, usize> {
     debug!("counting '{}' with counters: {:#?}", s, counters);
 
-    let mut counts: HashMap<Counter, usize> = counters.iter().map(|c| (*c, c.count(s))).collect();
-
-    // there should always be at least one line
-    if let Entry::Occupied(e) = counts.entry(Counter::Line) {
-        let count = e.into_mut();
-        *count += 1;
-    }
+    let counts: HashMap<Counter, usize> = counters.iter().map(|c| (*c, c.count(s))).collect();
 
     debug!("counted: {:#?}", counts);
     counts
@@ -107,7 +100,7 @@ mod test {
 
         let mut correct_counts = HashMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 5);
-        correct_counts.insert(Counter::Line, 1);
+        correct_counts.insert(Counter::Line, 0);
         correct_counts.insert(Counter::NumByte, 5);
         correct_counts.insert(Counter::Words, 1);
 
@@ -154,7 +147,7 @@ mod test {
 
         let mut correct_counts = HashMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 23);
-        correct_counts.insert(Counter::Line, 9);
+        correct_counts.insert(Counter::Line, 8);
         correct_counts.insert(Counter::NumByte, 29);
         correct_counts.insert(Counter::Words, 5);
 
@@ -181,7 +174,7 @@ mod test {
 
         let mut correct_counts = HashMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 50);
-        correct_counts.insert(Counter::Line, 1);
+        correct_counts.insert(Counter::Line, 0);
         correct_counts.insert(Counter::NumByte, i_can_eat_glass.len());
         correct_counts.insert(Counter::Words, 9);
 
