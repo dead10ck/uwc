@@ -21,7 +21,10 @@ pub struct UStrChunksIter<'a, R: BufRead + 'a> {
 
 impl<'a, R: BufRead> UStrChunksIter<'a, R> {
     pub fn new(reader: &'a mut R) -> UStrChunksIter<'a, R> {
-        UStrChunksIter{ reader, keep_reading: true }
+        UStrChunksIter {
+            reader,
+            keep_reading: true,
+        }
     }
 }
 

@@ -23,7 +23,7 @@ mod error;
 
 use std::collections::HashMap;
 use std::io;
-use std::io::{BufReader};
+use std::io::BufReader;
 
 use structopt::StructOpt;
 use failure::Error;
