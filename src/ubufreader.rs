@@ -1,4 +1,3 @@
-use std::io;
 use std::io::BufRead;
 
 use error::{UwcError, Result};

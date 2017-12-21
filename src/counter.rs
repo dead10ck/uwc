@@ -1,7 +1,6 @@
 use std::str;
 use std::collections::{HashSet, HashMap};
 
-use env_logger;
 use unicode_segmentation::UnicodeSegmentation;
 
 const NEL: &'static str = "\u{0085}";
@@ -85,6 +84,7 @@ pub enum CountMode {
 
 #[cfg(test)]
 mod test {
+    use env_logger;
     use super::*;
 
     #[test]

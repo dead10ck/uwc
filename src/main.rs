@@ -22,9 +22,8 @@ mod ubufreader;
 mod error;
 
 use std::collections::HashMap;
-use std::collections::hash_map::Entry;
 use std::io;
-use std::io::{BufRead, BufReader};
+use std::io::{BufReader};
 
 use structopt::StructOpt;
 use failure::Error;
