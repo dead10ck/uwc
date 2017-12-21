@@ -21,9 +21,8 @@ mod opt;
 mod ubufreader;
 mod error;
 
-use std::collections::HashMap;
-use std::io;
-use std::io::BufReader;
+use std::collections::BTreeMap;
+use std::io::{ self, Write, BufReader };
 
 use structopt::StructOpt;
 use failure::Error;
@@ -42,13 +41,36 @@ fn main() {
     }
 }
 
+fn write_counts<W: Write>(writer: &mut W, counts: &BTreeMap<Counter, usize>, fname: Option<&str>) -> Result<(), Error> {
+    let mut out_str = String::new();
+
+    let num_counts = counts.values().len();
+
+    for (i, count) in counts.values().enumerate() {
+        out_str.push_str(&count.to_string());
+
+        if i <= num_counts - 1 {
+            out_str.push_str("\t");
+        }
+    }
+
+    if let Some(name) = fname {
+        out_str.push_str("\t");
+        out_str.push_str(name);
+    }
+
+    out_str.push_str("\n");
+
+    Ok(writer.write_all(&out_str.as_bytes())?)
+}
+
 fn run() -> Result<(), Error> {
     let opts = Opt::from_args();
 
     debug!("opts: {:?}", opts);
 
     let counters = opts.get_counters();
-    let mut final_counts: HashMap<Counter, usize> = counters.iter().map(|c| (*c, 0)).collect();
+    let mut final_counts: BTreeMap<Counter, usize> = counters.iter().map(|c| (*c, 0)).collect();
 
     for file_name in opts.files {
         let input = Input::new(file_name)?;
@@ -70,6 +92,11 @@ fn run() -> Result<(), Error> {
     }
 
     info!("final_counts: {:?}", final_counts);
+
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+
+    write_counts(&mut handle, &final_counts, None)?;
 
     Ok(())
 }

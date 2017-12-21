@@ -1,5 +1,5 @@
 use std::str;
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashSet, BTreeMap};
 
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -46,7 +46,7 @@ impl Count for Counter {
 }
 
 /// Different types of counters.
-#[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub enum Counter {
     /// Counts grapheme clusters. The input is required to be valid UTF-8.
     GraphemeCluster,
@@ -62,10 +62,10 @@ pub enum Counter {
 }
 
 /// Counts the given `Counter`s in the given `&str`.
-pub fn count(counters: &[Counter], s: &str) -> HashMap<Counter, usize> {
+pub fn count(counters: &[Counter], s: &str) -> BTreeMap<Counter, usize> {
     debug!("counting '{}' with counters: {:#?}", s, counters);
 
-    let counts: HashMap<Counter, usize> = counters.iter().map(|c| (*c, c.count(s))).collect();
+    let counts: BTreeMap<Counter, usize> = counters.iter().map(|c| (*c, c.count(s))).collect();
 
     debug!("counted: {:#?}", counts);
     counts
@@ -98,7 +98,7 @@ mod test {
         ];
         let counts = count(&counters[..], s);
 
-        let mut correct_counts = HashMap::new();
+        let mut correct_counts = BTreeMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 5);
         correct_counts.insert(Counter::Line, 0);
         correct_counts.insert(Counter::NumByte, 5);
@@ -145,7 +145,7 @@ mod test {
         ];
         let counts = count(&counters[..], &s);
 
-        let mut correct_counts = HashMap::new();
+        let mut correct_counts = BTreeMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 23);
         correct_counts.insert(Counter::Line, 8);
         correct_counts.insert(Counter::NumByte, 29);
@@ -172,7 +172,7 @@ mod test {
 
         let counts = count(&counters[..], &s);
 
-        let mut correct_counts = HashMap::new();
+        let mut correct_counts = BTreeMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 50);
         correct_counts.insert(Counter::Line, 0);
         correct_counts.insert(Counter::NumByte, i_can_eat_glass.len());
