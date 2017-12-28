@@ -1,5 +1,6 @@
+use std::fmt;
 use std::str;
-use std::collections::{HashSet, BTreeMap};
+use std::collections::{BTreeMap, HashSet};
 
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -24,6 +25,8 @@ lazy_static! {
     };
 }
 
+pub type Counted = BTreeMap<Counter, usize>;
+
 /// Something that counts things in `&str`s.
 pub trait Count {
     /// Counts something in the given `&str`.
@@ -35,11 +38,9 @@ impl Count for Counter {
         match *self {
             Counter::GraphemeCluster => s.graphemes(true).count(),
             Counter::NumByte => s.len(),
-            Counter::Line => {
-                s.graphemes(true)
-                    .filter(|grapheme| NEWLINES.contains(grapheme))
-                    .count()
-            }
+            Counter::Line => s.graphemes(true)
+                .filter(|grapheme| NEWLINES.contains(grapheme))
+                .count(),
             Counter::Words => s.unicode_words().count(),
         }
     }
@@ -61,25 +62,27 @@ pub enum Counter {
     Words,
 }
 
+impl fmt::Display for Counter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match *self {
+            Counter::GraphemeCluster => "grapheme clusters",
+            Counter::NumByte => "bytes",
+            Counter::Line => "lines",
+            Counter::Words => "words",
+        };
+
+        write!(f, "{}", s)
+    }
+}
+
 /// Counts the given `Counter`s in the given `&str`.
-pub fn count(counters: &[Counter], s: &str) -> BTreeMap<Counter, usize> {
+pub fn count(counters: &[Counter], s: &str) -> Counted {
     debug!("counting '{}' with counters: {:#?}", s, counters);
 
     let counts: BTreeMap<Counter, usize> = counters.iter().map(|c| (*c, c.count(s))).collect();
 
     debug!("counted: {:#?}", counts);
     counts
-}
-
-pub enum CountMode {
-    /// Performs counts for the entire input.
-    Whole,
-
-    /// Performs counts for every file.
-    File,
-
-    /// Performs counts for every line.
-    Line,
 }
 
 #[cfg(test)]
@@ -158,7 +161,8 @@ mod test {
     fn test_count_counts_words() {
         let _ = env_logger::init();
 
-        let i_can_eat_glass = "Μπορῶ νὰ φάω σπασμένα γυαλιὰ χωρὶς νὰ πάθω τίποτα.";
+        let i_can_eat_glass =
+            "Μπορῶ νὰ φάω σπασμένα γυαλιὰ χωρὶς νὰ πάθω τίποτα.";
         let s = String::from(i_can_eat_glass);
 
         //debug!("words: {:?}", i_can_eat_glass.unicode_words().collect::<Vec<&str>>());
@@ -181,3 +185,4 @@ mod test {
         assert_eq!(correct_counts, counts);
     }
 }
+

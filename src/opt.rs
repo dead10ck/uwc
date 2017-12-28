@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use counter::Counter;
 
 #[derive(StructOpt, Debug)]
@@ -19,9 +21,40 @@ pub struct Opt {
     #[structopt(short = "w", long = "words")]
     pub words: bool,
 
+    /// Don't print the counter header
+    #[structopt(short = "n", long = "no-header")]
+    pub no_header: bool,
+
+    /// Counts the number of words
+    #[structopt(short = "m", long = "mode", default_value = "file",
+                help = "The format checker to use.",
+                possible_values_raw = "&[\"file\", \"f\", \"line\", \"l\"]")]
+    pub mode: CountMode,
+
     /// Sets the input file(s) to use. "-" gets treated as stdin.
     #[structopt(default_value = "-")]
     pub files: Vec<String>,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, StructOpt)]
+pub enum CountMode {
+    /// Performs counts for every file.
+    File,
+
+    /// Performs counts for every line.
+    Line,
+}
+
+impl FromStr for CountMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<CountMode, String> {
+        match s {
+            "file" | "f" => Ok(CountMode::File),
+            "line" | "l" => Ok(CountMode::Line),
+            _ => Err(format!("Unknown count mode: {}", s)),
+        }
+    }
 }
 
 impl Opt {
@@ -55,3 +88,4 @@ impl Opt {
         counters
     }
 }
+
