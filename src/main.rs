@@ -14,6 +14,7 @@ extern crate failure_derive;
 
 extern crate env_logger;
 extern crate unicode_segmentation;
+extern crate tabwriter;
 
 mod input;
 mod counter;
@@ -28,6 +29,7 @@ use std::fmt::Display;
 
 use structopt::StructOpt;
 use failure::Error;
+use tabwriter::TabWriter;
 
 use counter::{Counted, Counter};
 use input::Input;
@@ -123,10 +125,16 @@ fn run() -> Result<bool, Error> {
         .collect();
 
     let stdout = io::stdout();
-    let mut handle = stdout.lock();
+    let handle = stdout.lock();
+
+    let mut writer : Box<Write> = if opts.no_elastic {
+        Box::new(handle)
+    } else {
+        Box::new(TabWriter::new(handle))
+    };
 
     if !opts.no_header {
-        write_header(&mut handle, &counters)?;
+        write_header(&mut writer, &counters)?;
     }
 
     for (file_name, file_counts) in &mut counts {
@@ -160,7 +168,7 @@ fn run() -> Result<bool, Error> {
 
             if opts.mode == CountMode::Line {
                 let name = file_name_with_line(file_name, line_no);
-                write_counts(&mut handle, &cur_counts, Some(&name))?;
+                write_counts(&mut writer, &cur_counts, Some(&name))?;
             }
 
             for (counter, cur_count) in cur_counts {
@@ -171,10 +179,10 @@ fn run() -> Result<bool, Error> {
         }
 
         match opts.mode {
-            CountMode::File => write_counts(&mut handle, &file_counts, Some(file_name))?,
+            CountMode::File => write_counts(&mut writer, &file_counts, Some(file_name))?,
             CountMode::Line => {
                 let name = file_name_with_line(file_name, TOTAL);
-                write_counts(&mut handle, &file_counts, Some(&name))?;
+                write_counts(&mut writer, &file_counts, Some(&name))?;
             }
         }
     }
@@ -191,9 +199,10 @@ fn run() -> Result<bool, Error> {
             }
         }
 
-        write_counts(&mut handle, &totals, Some(TOTAL))?;
+        write_counts(&mut writer, &totals, Some(TOTAL))?;
     }
+
+    writer.flush()?;
 
     Ok(success)
 }
-

@@ -25,6 +25,10 @@ pub struct Opt {
     #[structopt(short = "n", long = "no-header")]
     pub no_header: bool,
 
+    /// Don't print the output with elastic tabstops.
+    #[structopt(short = "e", long = "no-elastic")]
+    pub no_elastic: bool,
+
     /// Counts the number of words
     #[structopt(short = "m", long = "mode", default_value = "file",
                 help = "The format checker to use.",
@@ -88,4 +92,3 @@ impl Opt {
         counters
     }
 }
-
