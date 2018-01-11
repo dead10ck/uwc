@@ -42,6 +42,7 @@ impl Count for Counter {
                 .filter(|grapheme| NEWLINES.contains(grapheme))
                 .count(),
             Counter::Words => s.unicode_words().count(),
+            Counter::CodePoints => s.chars().count(),
         }
     }
 }
@@ -60,6 +61,9 @@ pub enum Counter {
 
     /// Counts words.
     Words,
+
+    /// Counts unicode code points
+    CodePoints,
 }
 
 impl fmt::Display for Counter {
@@ -69,6 +73,7 @@ impl fmt::Display for Counter {
             Counter::NumByte => "bytes",
             Counter::Line => "lines",
             Counter::Words => "words",
+            Counter::CodePoints => "codepoints",
         };
 
         write!(f, "{}", s)
@@ -98,6 +103,7 @@ mod test {
             Counter::Line,
             Counter::NumByte,
             Counter::Words,
+            Counter::CodePoints,
         ];
         let counts = count(&counters[..], s);
 
@@ -106,6 +112,7 @@ mod test {
         correct_counts.insert(Counter::Line, 0);
         correct_counts.insert(Counter::NumByte, 5);
         correct_counts.insert(Counter::Words, 1);
+        correct_counts.insert(Counter::CodePoints, 5);
 
         assert_eq!(correct_counts, counts);
     }
@@ -145,6 +152,7 @@ mod test {
             Counter::Line,
             Counter::NumByte,
             Counter::Words,
+            Counter::CodePoints,
         ];
         let counts = count(&counters[..], &s);
 
@@ -153,6 +161,9 @@ mod test {
         correct_counts.insert(Counter::Line, 8);
         correct_counts.insert(Counter::NumByte, 29);
         correct_counts.insert(Counter::Words, 5);
+
+        // one more than grapheme clusters because of \r\n
+        correct_counts.insert(Counter::CodePoints, 24);
 
         assert_eq!(correct_counts, counts);
     }
@@ -172,6 +183,7 @@ mod test {
             Counter::Line,
             Counter::NumByte,
             Counter::Words,
+            Counter::CodePoints,
         ];
 
         let counts = count(&counters[..], &s);
@@ -181,8 +193,33 @@ mod test {
         correct_counts.insert(Counter::Line, 0);
         correct_counts.insert(Counter::NumByte, i_can_eat_glass.len());
         correct_counts.insert(Counter::Words, 9);
+        correct_counts.insert(Counter::CodePoints, 50);
+
+        assert_eq!(correct_counts, counts);
+    }
+
+    #[test]
+    fn test_count_counts_codepoints() {
+        let _ = env_logger::init();
+
+        // these are NOT the same! One is e + ́́ , and one is é, a single codepoint
+        let one = "é";
+        let two = "é";
+
+        let counters = [ Counter::CodePoints, ];
+
+        let counts = count(&counters[..], &one);
+
+        let mut correct_counts = BTreeMap::new();
+        correct_counts.insert(Counter::CodePoints, 1);
+
+        assert_eq!(correct_counts, counts);
+
+        let counts = count(&counters[..], &two);
+
+        let mut correct_counts = BTreeMap::new();
+        correct_counts.insert(Counter::CodePoints, 2);
 
         assert_eq!(correct_counts, counts);
     }
 }
-

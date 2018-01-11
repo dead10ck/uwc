@@ -21,6 +21,10 @@ pub struct Opt {
     #[structopt(short = "w", long = "words")]
     pub words: bool,
 
+    /// Counts the number of Unicode code points
+    #[structopt(short = "p", long = "code-points")]
+    pub codepoints: bool,
+
     /// Don't print the counter header
     #[structopt(short = "n", long = "no-header")]
     pub no_header: bool,
@@ -80,6 +84,10 @@ impl Opt {
 
         if self.words {
             counters.push(Counter::Words);
+        }
+
+        if self.codepoints {
+            counters.push(Counter::CodePoints);
         }
 
         // pick some defaults if the user doesn't specify any counters
