@@ -69,7 +69,7 @@ pub enum Counter {
 impl fmt::Display for Counter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match *self {
-            Counter::GraphemeCluster => "grapheme clusters",
+            Counter::GraphemeCluster => "graphemes",
             Counter::NumByte => "bytes",
             Counter::Line => "lines",
             Counter::Words => "words",
