@@ -50,21 +50,33 @@ impl Count for Counter {
 /// Different types of counters.
 #[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub enum Counter {
-    /// Counts grapheme clusters. The input is required to be valid UTF-8.
-    GraphemeCluster,
-
-    /// Counts the total number of bytes.
-    NumByte,
-
     /// Counts lines.
     Line,
 
     /// Counts words.
     Words,
 
+    /// Counts the total number of bytes.
+    NumByte,
+
+    /// Counts grapheme clusters. The input is required to be valid UTF-8.
+    GraphemeCluster,
+
     /// Counts unicode code points
     CodePoints,
 }
+
+/// A convenience array of all counter types.
+pub const ALL_COUNTERS: [Counter; 5] = [
+    Counter::GraphemeCluster,
+    Counter::NumByte,
+    Counter::Line,
+    Counter::Words,
+    Counter::CodePoints,
+];
+
+/// A convenience array of the default counter types.
+pub const DEFAULT_COUNTERS: [Counter; 3] = [Counter::Line, Counter::Words, Counter::NumByte];
 
 impl fmt::Display for Counter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -93,19 +105,13 @@ pub fn count(counters: &[Counter], s: &str) -> Counted {
 #[cfg(test)]
 mod test {
     use env_logger;
+    use counter;
     use super::*;
 
     #[test]
     fn test_count_hello() {
         let s = "hello";
-        let counters = [
-            Counter::GraphemeCluster,
-            Counter::Line,
-            Counter::NumByte,
-            Counter::Words,
-            Counter::CodePoints,
-        ];
-        let counts = count(&counters[..], s);
+        let counts = count(&counter::ALL_COUNTERS[..], s);
 
         let mut correct_counts = BTreeMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 5);
@@ -147,14 +153,7 @@ mod test {
             debug!("grapheme: {}", grapheme);
         }
 
-        let counters = [
-            Counter::GraphemeCluster,
-            Counter::Line,
-            Counter::NumByte,
-            Counter::Words,
-            Counter::CodePoints,
-        ];
-        let counts = count(&counters[..], &s);
+        let counts = count(&counter::ALL_COUNTERS[..], &s);
 
         let mut correct_counts = BTreeMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 23);
@@ -178,15 +177,7 @@ mod test {
 
         //debug!("words: {:?}", i_can_eat_glass.unicode_words().collect::<Vec<&str>>());
 
-        let counters = [
-            Counter::GraphemeCluster,
-            Counter::Line,
-            Counter::NumByte,
-            Counter::Words,
-            Counter::CodePoints,
-        ];
-
-        let counts = count(&counters[..], &s);
+        let counts = count(&counter::ALL_COUNTERS[..], &s);
 
         let mut correct_counts = BTreeMap::new();
         correct_counts.insert(Counter::GraphemeCluster, 50);
@@ -206,7 +197,7 @@ mod test {
         let one = "é";
         let two = "é";
 
-        let counters = [ Counter::CodePoints, ];
+        let counters = [Counter::CodePoints];
 
         let counts = count(&counters[..], &one);
 
@@ -223,3 +214,4 @@ mod test {
         assert_eq!(correct_counts, counts);
     }
 }
+

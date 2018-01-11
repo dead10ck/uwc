@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use counter::Counter;
+use counter::{self, Counter};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Counts things in strings.")]
@@ -24,6 +24,10 @@ pub struct Opt {
     /// Counts the number of Unicode code points
     #[structopt(short = "p", long = "code-points")]
     pub codepoints: bool,
+
+    /// Counts everything
+    #[structopt(short = "a", long = "all")]
+    pub all: bool,
 
     /// Don't print the counter header
     #[structopt(short = "n", long = "no-header")]
@@ -70,6 +74,11 @@ impl Opt {
     pub fn get_counters(&self) -> Vec<Counter> {
         let mut counters = Vec::new();
 
+        if self.all {
+            counters.extend_from_slice(&counter::ALL_COUNTERS[..]);
+            return counters;
+        }
+
         if self.grapheme_clusters {
             counters.push(Counter::GraphemeCluster);
         }
@@ -92,9 +101,7 @@ impl Opt {
 
         // pick some defaults if the user doesn't specify any counters
         if counters.is_empty() {
-            counters.push(Counter::Line);
-            counters.push(Counter::Words);
-            counters.push(Counter::NumByte);
+            counters.extend_from_slice(&counter::DEFAULT_COUNTERS[..]);
         }
 
         counters
