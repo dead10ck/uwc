@@ -13,8 +13,8 @@ extern crate failure;
 extern crate failure_derive;
 
 extern crate env_logger;
-extern crate unicode_segmentation;
 extern crate tabwriter;
+extern crate unicode_segmentation;
 
 mod input;
 mod counter;
@@ -128,7 +128,7 @@ fn run() -> Result<bool, Error> {
     let stdout = io::stdout();
     let handle = stdout.lock();
 
-    let mut writer : Box<Write> = if opts.no_elastic {
+    let mut writer: Box<Write> = if opts.no_elastic {
         Box::new(handle)
     } else {
         Box::new(TabWriter::new(handle))
@@ -157,7 +157,7 @@ fn run() -> Result<bool, Error> {
             let line = match line {
                 Ok(l) => l,
                 Err(e) => {
-                    eprintln!("Error: {}", e);
+                    eprintln!("{}:{}: {}", file_name, line_no, e);
                     success = false;
                     continue;
                 }
@@ -207,3 +207,4 @@ fn run() -> Result<bool, Error> {
 
     Ok(success)
 }
+
