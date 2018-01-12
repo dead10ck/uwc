@@ -114,6 +114,7 @@ fn run() -> Result<bool, Error> {
     debug!("opts: {:?}", opts);
 
     let counters = opts.get_counters();
+
     let mut counts: BTreeMap<String, Counted> = opts.files
         .into_iter()
         .map(|fname| {

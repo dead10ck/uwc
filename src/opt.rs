@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::collections::BTreeSet;
 
 use counter::{self, Counter};
 
@@ -71,39 +72,40 @@ impl FromStr for CountMode {
 
 impl Opt {
     /// Gets the [`Counter`]s from the CLI options.
-    pub fn get_counters(&self) -> Vec<Counter> {
-        let mut counters = Vec::new();
+    pub fn get_counters(&self) -> BTreeSet<Counter> {
+        let mut counters = BTreeSet::new();
 
         if self.all {
-            counters.extend_from_slice(&counter::ALL_COUNTERS[..]);
+            counters.extend(&counter::ALL_COUNTERS[..]);
             return counters;
         }
 
         if self.grapheme_clusters {
-            counters.push(Counter::GraphemeCluster);
+            counters.insert(Counter::GraphemeCluster);
         }
 
         if self.bytes {
-            counters.push(Counter::NumByte);
+            counters.insert(Counter::NumByte);
         }
 
         if self.lines {
-            counters.push(Counter::Line);
+            counters.insert(Counter::Line);
         }
 
         if self.words {
-            counters.push(Counter::Words);
+            counters.insert(Counter::Words);
         }
 
         if self.codepoints {
-            counters.push(Counter::CodePoints);
+            counters.insert(Counter::CodePoints);
         }
 
         // pick some defaults if the user doesn't specify any counters
         if counters.is_empty() {
-            counters.extend_from_slice(&counter::DEFAULT_COUNTERS[..]);
+            counters.extend(&counter::DEFAULT_COUNTERS[..]);
         }
 
         counters
     }
 }
+

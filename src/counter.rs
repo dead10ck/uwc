@@ -93,12 +93,12 @@ impl fmt::Display for Counter {
 }
 
 /// Counts the given `Counter`s in the given `&str`.
-pub fn count(counters: &[Counter], s: &str) -> Counted {
-    debug!("counting '{}' with counters: {:#?}", s, counters);
-
-    let counts: BTreeMap<Counter, usize> = counters.iter().map(|c| (*c, c.count(s))).collect();
-
-    debug!("counted: {:#?}", counts);
+pub fn count<'a, I>(counters: I, s: &str) -> Counted
+where
+    I: IntoIterator<Item = &'a Counter>,
+{
+    let counts: Counted = counters.into_iter().map(|c| (*c, c.count(s))).collect();
+    debug!("s: {}, counted: {:#?}", s, counts);
     counts
 }
 
