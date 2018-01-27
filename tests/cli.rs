@@ -1,14 +1,13 @@
 /// Note that because std::process::Output::std{out,err} is just a Vec<u8> and
 /// OsString::from_vec is unstable, these tests assume that stdout is valid UTF-8.
-
+extern crate env_logger;
 #[macro_use]
 extern crate log;
-extern crate env_logger;
 
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::process::Command;
 use std::fs::{self, File};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::ffi::{OsStr, OsString};
 use std::io::Read;
 
@@ -32,7 +31,7 @@ where
 
 /// Takes a String that should be the output of a run, discards the header, and
 /// parses the rest of the output into their fields.
-fn parse_lines<'a>(output: &'a str, has_header: bool) -> Vec<(Vec<usize>, &'a str)> {
+fn parse_lines<'a>(output: &'a str, has_header: bool) -> HashSet<(Vec<usize>, &'a str)> {
     let mut lines: VecDeque<&str> = output.lines().collect();
 
     // If there's a header, there should be at least 2 lines. If there is no
@@ -46,12 +45,12 @@ fn parse_lines<'a>(output: &'a str, has_header: bool) -> Vec<(Vec<usize>, &'a st
         lines.pop_front();
     }
 
-    let mut parsed = Vec::new();
+    let mut parsed = HashSet::new();
 
     for line in lines {
         let mut fields: Vec<&str> = line.split_whitespace().collect();
         let fname = fields.pop().unwrap();
-        parsed.push((
+        parsed.insert((
             fields
                 .into_iter()
                 .map(str::parse)
@@ -75,7 +74,7 @@ fn test_no_args() {
 
     // lines  words  bytes  filename
     // 0      0      0      -
-    let correct_fields = vec![(vec![0usize, 0, 0], "-")];
+    let correct_fields: HashSet<_> = vec![(vec![0usize, 0, 0], "-")].into_iter().collect();
     assert_eq!(correct_fields, fields);
 
     // should be no stderr
@@ -112,6 +111,30 @@ const INPUT_FILE_NAME: &str = "input";
 const OUTPUT_FILE_NAME: &str = "output";
 const OPTS_FILE_NAME: &str = "opts";
 
+/// Get the input files from the given directory.
+fn get_input_files(base: &Path) -> Vec<PathBuf> {
+    fs::read_dir(base)
+        .unwrap()
+        .map(Result::unwrap)
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .starts_with(INPUT_FILE_NAME)
+        })
+        .collect()
+}
+
+/// Soak up the given file into a String, unwrapping along the way.
+fn soak_string(path: &Path) -> String {
+    let mut file = File::open(path).expect(&format!("error on test entry: {:?}", path));
+    let mut string = String::new();
+    file.read_to_string(&mut string).unwrap();
+    string
+}
+
 /// In the 'fixtures' directory, there is a set of fixed files that provide
 /// a sample input file and an accompanying file that contains what the output
 /// is expected to be. This test walks the directory and verfies each one.
@@ -121,7 +144,7 @@ const OPTS_FILE_NAME: &str = "opts";
 /// ```
 /// tests/fixtures
 /// └── hello
-///     ├── input   🠜  This file contains the sample text to give to the binary as
+///     ├── input.* 🠜  These files contains the sample text to give to the binary as
 ///     │              input.
 ///     ├── opts    🠜  This file contains the options to pass to the binary, passed
 ///     │              after the binary name itself, but before the input file's
@@ -143,23 +166,13 @@ fn test_fixtures() {
             continue;
         }
 
-        let input_path = test_path.join(INPUT_FILE_NAME);
-
-        let mut opts_file = File::open(test_path.join(OPTS_FILE_NAME))
-            .expect(&format!("error on test entry: {:?}", test_path));
-
-        let mut opts = String::new();
-        opts_file.read_to_string(&mut opts).unwrap();
+        let opts = soak_string(&test_path.join(OPTS_FILE_NAME));
+        let input_paths = get_input_files(&test_path);
 
         let mut args: Vec<OsString> = opts.split_whitespace().map(OsString::from).collect();
-        args.push(input_path.into_os_string());
+        args.extend(input_paths.into_iter().map(PathBuf::into_os_string));
 
-        let mut output_file = File::open(test_path.join(OUTPUT_FILE_NAME))
-            .expect(&format!("error on test entry: {:?}", test_path));
-
-        let mut expected_output = String::new();
-        output_file.read_to_string(&mut expected_output).unwrap();
-
+        let expected_output = soak_string(&test_path.join(OUTPUT_FILE_NAME));
         let correct_fields = parse_lines(&expected_output, true);
 
         let mut cmd = main_binary_with_args(&args);
