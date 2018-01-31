@@ -26,7 +26,7 @@ pub struct Opt {
     #[structopt(short = "p", long = "code-points")]
     pub codepoints: bool,
 
-    /// Counts everything
+    /// Counts everything. (The default counters are: lines, words, bytes)
     #[structopt(short = "a", long = "all")]
     pub all: bool,
 
@@ -41,7 +41,7 @@ pub struct Opt {
     /// The counting mode.
     #[structopt(short = "m", long = "mode", default_value = "file",
                 help = "The format checker to use.",
-                possible_values_raw = "&[\"file\", \"f\", \"line\", \"l\"]")]
+                possible_values_raw = "&[\"file\", \"line\"]")]
     pub mode: CountMode,
 
     /// Don't print the output with elastic tabstops.
