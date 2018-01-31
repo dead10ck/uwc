@@ -38,11 +38,15 @@ pub struct Opt {
     #[structopt(short = "e", long = "no-elastic")]
     pub no_elastic: bool,
 
-    /// Counts the number of words
+    /// The counting mode.
     #[structopt(short = "m", long = "mode", default_value = "file",
                 help = "The format checker to use.",
                 possible_values_raw = "&[\"file\", \"f\", \"line\", \"l\"]")]
     pub mode: CountMode,
+
+    /// Don't print the output with elastic tabstops.
+    #[structopt(long = "count-newlines")]
+    pub count_newlines: bool,
 
     /// Sets the input file(s) to use. "-" gets treated as stdin.
     #[structopt(default_value = "-")]
@@ -106,6 +110,14 @@ impl Opt {
         }
 
         counters
+    }
+
+    /// Determines if the input buffer should count newlines.
+    pub fn should_keep_newlines(&self) -> bool {
+        match self.mode {
+            CountMode::File => true,
+            CountMode::Line => self.count_newlines,
+        }
     }
 }
 

@@ -114,6 +114,7 @@ fn run() -> Result<bool, Error> {
     debug!("opts: {:?}", opts);
 
     let counters = opts.get_counters();
+    let keep_newlines = opts.should_keep_newlines();
 
     let mut counts: BTreeMap<String, Counted> = opts.files
         .into_iter()
@@ -151,9 +152,12 @@ fn run() -> Result<bool, Error> {
         };
 
         let mut reader = BufReader::new(input);
-        let chunks = UStrChunksIter::new(&mut reader);
+
+        let chunks = UStrChunksIter::new(&mut reader, keep_newlines);
 
         for (line_no, line) in chunks.enumerate() {
+            let line_no = line_no + 1; // to start at 1
+
             let line = match line {
                 Ok(l) => l,
                 Err(e) => {

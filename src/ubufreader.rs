@@ -1,6 +1,6 @@
 use std::io::BufRead;
 
-use error::{UwcError, Result};
+use error::{Result, UwcError};
 
 /// An iterator over `&str`s read from a `BufRead`. For now, it reads lines,
 /// similar to `BufRead::lines`, but it includes the newline character for
@@ -17,13 +17,17 @@ pub struct UStrChunksIter<'a, R: BufRead + 'a> {
     /// will become false if the underlying reader has been closed, or some
     /// error has occurred.
     keep_reading: bool,
+
+    /// For line mode. Indicates whether the newline should be kept or not.
+    keep_newline: bool,
 }
 
 impl<'a, R: BufRead> UStrChunksIter<'a, R> {
-    pub fn new(reader: &'a mut R) -> UStrChunksIter<'a, R> {
+    pub fn new(reader: &'a mut R, keep_newline: bool) -> UStrChunksIter<'a, R> {
         UStrChunksIter {
             reader,
             keep_reading: true,
+            keep_newline: keep_newline,
         }
     }
 }
@@ -51,6 +55,21 @@ impl<'a, R: BufRead> Iterator for UStrChunksIter<'a, R> {
             return None;
         }
 
+        // TODO: This is only necessary while we are using BufRead::read_line,
+        // since this is exactly the byte sequence that it splits on. Once we
+        // implement our own line splitter that includes all valid Unicode line
+        // breaks, this code will need revision.
+        //
+        // Follow the example of std::io::Lines:
+        // https://doc.rust-lang.org/src/std/io/mod.rs.html#2120
+        if !self.keep_newline && output.ends_with("\n") {
+            output.pop();
+
+            if output.ends_with("\r") {
+                output.pop();
+            }
+        }
+
         Some(Ok(output))
     }
 }
@@ -66,7 +85,7 @@ mod test {
     fn test_basic() {
         let _ = env_logger::init();
         let mut cursor = io::Cursor::new(b"hello");
-        let mut chunks = UStrChunksIter::new(&mut cursor);
+        let mut chunks = UStrChunksIter::new(&mut cursor, true);
         let mut s = chunks.next();
         assert_eq!("hello", s.unwrap().unwrap());
 
@@ -80,7 +99,7 @@ mod test {
     fn test_chunks_by_newline() {
         let _ = env_logger::init();
         let mut cursor = io::Cursor::new(b"hello\ngoodbye\r\nwindows?");
-        let mut chunks = UStrChunksIter::new(&mut cursor);
+        let mut chunks = UStrChunksIter::new(&mut cursor, true);
         assert_eq!("hello\n", chunks.next().unwrap().unwrap());
         assert_eq!("goodbye\r\n", chunks.next().unwrap().unwrap());
         assert_eq!("windows?", chunks.next().unwrap().unwrap());
@@ -95,7 +114,7 @@ mod test {
     fn test_basic_buffered() {
         let cursor = io::Cursor::new(b"hello");
         let mut reader = BufReader::with_capacity(3, cursor);
-        let mut chunks = UStrChunksIter::new(&mut reader);
+        let mut chunks = UStrChunksIter::new(&mut reader, true);
         assert_eq!("hel", chunks.next().unwrap().unwrap());
         assert_eq!("lo", chunks.next().unwrap().unwrap());
         assert!(chunks.next().is_none());
@@ -111,14 +130,13 @@ mod test {
 
         // this should stop reading 2 bytes into the emoji
         let mut reader = BufReader::with_capacity(8, cursor);
-        let mut chunks = UStrChunksIter::new(&mut reader);
+        let mut chunks = UStrChunksIter::new(&mut reader, true);
 
         assert_eq!("hello ", chunks.next().unwrap().unwrap());
         assert_eq!("😬 whoops", chunks.next().unwrap().unwrap());
         assert!(chunks.next().is_none());
         assert!(chunks.next().is_none());
     }
-
 
     // TODO: Run these tests when the iterator does not chunk by newlines any more.
     #[test]
@@ -132,7 +150,7 @@ mod test {
         );
 
         let mut reader = BufReader::with_capacity(10, cursor);
-        let mut chunks = UStrChunksIter::new(&mut reader);
+        let mut chunks = UStrChunksIter::new(&mut reader, true);
 
         assert_eq!("私はガ", chunks.next().unwrap().unwrap());
         assert_eq!("ラスを", chunks.next().unwrap().unwrap());
@@ -147,3 +165,4 @@ mod test {
         assert!(chunks.next().is_none());
     }
 }
+
