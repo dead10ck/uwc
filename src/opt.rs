@@ -30,21 +30,25 @@ pub struct Opt {
     #[structopt(short = "a", long = "all")]
     pub all: bool,
 
-    /// Don't print the counter header
+    /// Don't print the field names on the first line.
     #[structopt(short = "n", long = "no-header")]
     pub no_header: bool,
 
-    /// Don't print the output with elastic tabstops.
+    /// Don't print the output with elastic tabstops. Instead, fields will just be
+    /// separated with hard tab characters. Use this if you want streaming output,
+    /// or if you want the output to be more scriptable.
     #[structopt(short = "e", long = "no-elastic")]
     pub no_elastic: bool,
 
     /// The counting mode.
     #[structopt(short = "m", long = "mode", default_value = "file",
-                help = "The format checker to use.",
+                help = "The format checker to use. Line mode will count things \
+                        within lines, and by default, it will not count newline \
+                        characters. See --count-newlines.",
                 possible_values_raw = "&[\"file\", \"line\"]")]
     pub mode: CountMode,
 
-    /// Don't print the output with elastic tabstops.
+    /// When in line mode, count newline characters.
     #[structopt(long = "count-newlines")]
     pub count_newlines: bool,
 
