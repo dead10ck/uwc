@@ -1,6 +1,6 @@
+use std::collections::{BTreeMap, HashSet};
 use std::fmt;
 use std::str;
-use std::collections::{BTreeMap, HashSet};
 
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -26,6 +26,14 @@ lazy_static! {
 }
 
 pub type Counted = BTreeMap<Counter, usize>;
+
+/// Take all the counts in `other_counts` and sum them into `accum`.
+pub fn sum_counts(accum: &mut Counted, other_counts: &Counted) {
+    for (counter, count) in other_counts {
+        let entry = accum.entry(*counter).or_insert(0);
+        *entry += count;
+    }
+}
 
 /// Something that counts things in `&str`s.
 pub trait Count {
@@ -104,9 +112,9 @@ where
 
 #[cfg(test)]
 mod test {
-    use env_logger;
-    use counter;
     use super::*;
+    use counter;
+    use env_logger;
 
     #[test]
     fn test_count_hello() {
@@ -214,4 +222,3 @@ mod test {
         assert_eq!(correct_counts, counts);
     }
 }
-

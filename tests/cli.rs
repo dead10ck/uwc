@@ -185,4 +185,3 @@ fn test_fixtures() {
         assert_eq!(correct_fields, fields);
     }
 }
-

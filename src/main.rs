@@ -12,22 +12,28 @@ extern crate structopt_derive;
 extern crate failure;
 
 extern crate env_logger;
+extern crate itertools;
 extern crate tabwriter;
 extern crate unicode_segmentation;
 
-mod input;
+extern crate rayon;
+use rayon::prelude::*;
+
 mod counter;
+mod error;
+mod input;
 mod opt;
 mod ubufreader;
-mod error;
 
 use std::collections::BTreeMap;
+use std::fmt::Display;
 use std::io::{self, BufReader, Write};
 use std::iter::IntoIterator;
-use std::fmt::Display;
+use std::sync::{Arc, Mutex};
 
-use structopt::StructOpt;
 use failure::Error;
+use itertools::Itertools;
+use structopt::StructOpt;
 use tabwriter::TabWriter;
 
 use counter::{Counted, Counter};
@@ -53,7 +59,7 @@ fn main() {
 }
 
 fn write_counts<W: Write>(
-    writer: &mut W,
+    mut writer: W,
     counts: &BTreeMap<Counter, usize>,
     title: Option<&str>,
 ) -> Result<(), Error> {
@@ -100,6 +106,22 @@ where
     Ok(writer.write_all(&out_str.as_bytes())?)
 }
 
+fn sum_counts<'a, I>(counts: I) -> BTreeMap<Counter, usize>
+where
+    I: IntoIterator<Item = &'a BTreeMap<Counter, usize>>,
+{
+    let mut totals = BTreeMap::new();
+
+    for counts in counts {
+        for (counter, count) in counts.iter() {
+            let c = totals.entry(*counter).or_insert(0);
+            *c += count;
+        }
+    }
+
+    totals
+}
+
 /// The return type indicates error conditions. In some error cases, it will just
 /// print the error and continue counting (e.g., if the user passes a directory
 /// as input). A return value of Ok(true) indicates that the run was successful
@@ -114,6 +136,7 @@ fn run() -> Result<bool, Error> {
 
     let counters = opts.get_counters();
     let keep_newlines = opts.should_keep_newlines();
+    let mode = opts.mode;
 
     let mut counts: BTreeMap<String, Counted> = opts.files
         .into_iter()
@@ -126,19 +149,18 @@ fn run() -> Result<bool, Error> {
         .collect();
 
     let stdout = io::stdout();
-    let handle = stdout.lock();
 
-    let mut writer: Box<Write> = if opts.no_elastic {
-        Box::new(handle)
+    let writer: Arc<Mutex<Write + Send + Sync>> = if opts.no_elastic {
+        Arc::new(Mutex::new(stdout))
     } else {
-        Box::new(TabWriter::new(handle))
+        Arc::new(Mutex::new(TabWriter::new(stdout)))
     };
 
     if !opts.no_header {
-        write_header(&mut writer, &counters)?;
+        write_header(&mut *writer.lock().unwrap(), &counters)?;
     }
 
-    for (file_name, file_counts) in &mut counts {
+    for (file_name, mut file_counts) in &mut counts {
         info!("Counting file: {}", file_name);
 
         let input = match Input::new(file_name) {
@@ -151,63 +173,86 @@ fn run() -> Result<bool, Error> {
         };
 
         let mut reader = BufReader::new(input);
+        let mut chunks = UStrChunksIter::new(&mut reader, keep_newlines);
 
-        let chunks = UStrChunksIter::new(&mut reader, keep_newlines);
+        for chunk in &chunks.chunks(10_000) {
+            let chunk: Vec<_> = chunk.collect();
 
-        for (line_no, line) in chunks.enumerate() {
-            let line_no = line_no + 1; // to start at 1
+            let (chunk_success, line_counts) = chunk
+                .into_par_iter()
+                .enumerate()
+                .map(|(line_no, line)| {
+                    let line_no = line_no + 1; // to start at 1
+                    let line = match line {
+                        Ok(l) => l,
+                        Err(e) => {
+                            eprintln!("{}:{}: {}", file_name, line_no, e);
+                            return Ok((false, BTreeMap::new()));
+                        }
+                    };
 
-            let line = match line {
-                Ok(l) => l,
-                Err(e) => {
-                    eprintln!("{}:{}: {}", file_name, line_no, e);
-                    success = false;
-                    continue;
-                }
-            };
+                    debug!("line: {:?}", line);
 
-            debug!("line: {:?}", line);
+                    let cur_counts = counter::count(&counters, &line);
 
-            let cur_counts = counter::count(&counters, &line);
+                    if mode == CountMode::Line {
+                        let name = file_name_with_line(file_name, line_no);
+                        write_counts(&mut *writer.lock().unwrap(), &cur_counts, Some(&name))?;
+                    }
 
-            if opts.mode == CountMode::Line {
-                let name = file_name_with_line(file_name, line_no);
-                write_counts(&mut writer, &cur_counts, Some(&name))?;
-            }
+                    Ok((true, cur_counts))
+                })
 
-            for (counter, cur_count) in cur_counts {
-                // Unwrap is ok since this map is constructed with the counters.
-                let count = file_counts.get_mut(&counter).unwrap();
-                *count += cur_count;
-            }
+                // sum up the counts for each line into the total counts for
+                // the file
+                .reduce(|| Ok((true, Counted::new())), |mut acc : Result<_, Error>, r: Result<_, Error>| {
+
+                    if r.is_err() {
+                        return r;
+                    }
+
+                    match acc {
+                        Err(e) => return Err(e),
+                        Ok(ref mut acc_counts_success) => {
+                            // already guaranteed to be ok by the check above
+                            let (mut r_success, mut r_current) = r.unwrap();
+                            let &mut (ref mut acc_success, ref mut acc_counts) = acc_counts_success;
+
+                            for (ctr, total) in r_current {
+                                let entry = acc_counts.entry(ctr).or_insert(0);
+                                *entry += total;
+                            }
+
+                            *acc_success |= r_success;
+                        }
+                    }
+
+                    acc
+                })?;
+
+            counter::sum_counts(&mut file_counts, &line_counts);
+            success |= chunk_success;
         }
 
-        match opts.mode {
-            CountMode::File => write_counts(&mut writer, &file_counts, Some(file_name))?,
+        match mode {
+            CountMode::File => {
+                write_counts(&mut *writer.lock().unwrap(), &file_counts, Some(file_name))?
+            }
             CountMode::Line => {
                 let name = file_name_with_line(file_name, TOTAL);
-                write_counts(&mut writer, &file_counts, Some(&name))?;
+                write_counts(&mut *writer.lock().unwrap(), &file_counts, Some(&name))?;
             }
         }
     }
 
     info!("final_counts: {:?}", counts);
 
-    if opts.mode == CountMode::File && counts.len() > 1 {
-        let mut totals = BTreeMap::new();
-
-        for file_counts in counts.values() {
-            for (counter, count) in file_counts.iter() {
-                let c = totals.entry(*counter).or_insert(0);
-                *c += count;
-            }
-        }
-
-        write_counts(&mut writer, &totals, Some(TOTAL))?;
+    if mode == CountMode::File && counts.len() > 1 {
+        let totals = sum_counts(counts.values());
+        write_counts(&mut *writer.lock().unwrap(), &totals, Some(TOTAL))?;
     }
 
-    writer.flush()?;
+    writer.lock().unwrap().flush()?;
 
     Ok(success)
 }
-

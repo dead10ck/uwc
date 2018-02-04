@@ -22,7 +22,8 @@ structopt = "^0.1"
 structopt-derive = "^0.1"
 failure = "^0.1.1"
 tabwriter = "^1.0.3"
-#rayon = "^0.9"
+itertools = "^0.7.6"
+rayon = "^1.0"
 
 #[profile.release]
 #debug = true
