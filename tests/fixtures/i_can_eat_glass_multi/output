@@ -1,0 +1,6 @@
+lines  words  bytes  graphemes  codepoints  filename
+1      9      97     51         51          tests/fixtures/i_can_eat_glass_multi/input_greek
+1      6      56     31         31          tests/fixtures/i_can_eat_glass_multi/input_turkish
+1      10     53     41         41          tests/fixtures/i_can_eat_glass_multi/input_vietnamese_nfc
+1      10     61     41         51          tests/fixtures/i_can_eat_glass_multi/input_vietnamese_nfd
+4      35     267    164        174         total

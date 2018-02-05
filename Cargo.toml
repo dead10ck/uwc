@@ -8,7 +8,12 @@ unicode-segmentation = "^1.2.0"
 log = "^0.3.8"
 env_logger = "^0.4.3"
 lazy_static = "^0.2.10"
+structopt = "^0.1"
+structopt-derive = "^0.1"
+failure = "^0.1.1"
+failure_derive = "^0.1.1"
+tabwriter = "^1.0.3"
+#rayon = "^0.9"
 
-[dependencies.clap]
-version = "^2.27.1"
-features = [ "color" ]
+#[profile.release]
+#debug = true

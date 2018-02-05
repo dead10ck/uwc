@@ -1,0 +1,10 @@
+lines  words  bytes  graphemes  codepoints  filename
+0      1      1      1          1           tests/fixtures/line_mode_no_trailing_newline/input:1
+0      1      2      2          2           tests/fixtures/line_mode_no_trailing_newline/input:2
+0      1      3      3          3           tests/fixtures/line_mode_no_trailing_newline/input:3
+0      1      5      4          4           tests/fixtures/line_mode_no_trailing_newline/input:4
+0      1      1      1          1           tests/fixtures/line_mode_no_trailing_newline/input:5
+0      1      4      4          4           tests/fixtures/line_mode_no_trailing_newline/input:6
+0      1      2      2          2           tests/fixtures/line_mode_no_trailing_newline/input:7
+0      1      3      3          3           tests/fixtures/line_mode_no_trailing_newline/input:8
+0      8      21     20         20          tests/fixtures/line_mode_no_trailing_newline/input:total

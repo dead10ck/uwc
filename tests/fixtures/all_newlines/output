@@ -1,0 +1,2 @@
+lines  words  bytes  graphemes  codepoints  filename
+8      5      29     23         24          tests/fixtures/all_newlines/input
