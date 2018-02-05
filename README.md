@@ -88,6 +88,14 @@ caveats below.
 It is primarily a fun side project for me, and an excuse to learn more about Rust
 and unicode.
 
+## Installation
+
+It is published on crates.io, so simply:
+
+```sh
+$ cargo install uwc
+```
+
 ## Caveats
 
 ### UTF-8
