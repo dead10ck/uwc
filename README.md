@@ -74,7 +74,7 @@ The goal of this project is to consider unicode rules correctly when counting
 things. Specifically, it should:
 
 * Count all newline characters correctly. This includes lesser-known line breaks,
-  like NEL (U+0085), FF (U+000C), LS (U+2028), and PS (U+2029).
+  like NEL&#160;(U+0085), FF&#160;(U+000C), LS&#160;(U+2028), and PS&#160;(U+2029).
 * Count all words using the Unicode standard's word boundary rules.
 * Count all complete grapheme clusters correctly, so that even edge cases like
    Z҉͈͓͈͎a̘͈̠̭l̨̯g̶̬͇̭o̝̹̗͎̙ ͟t͖̙̟̹͇̥̝͡e̥͘x͚̺̭̻͘t͉͔̩̲̘, for example, are counted correctly.
