@@ -2,6 +2,16 @@
 name = "uwc"
 version = "0.1.0"
 authors = ["Skyler Hawthorne <skylerhawthorne@gmail.com>"]
+description = "Counts things in unicode text files"
+respository = "https://github.com/dead10ck/uwc"
+readme = "README.md"
+
+keywords = [ "wc", "unicode", "word", "count" ]
+categories = [ "command-line-utilities", "text-processing" ]
+license = "MPL-2.0"
+
+[badges]
+travis-ci = { repository = "dead10ck/uwc", branch = "master" }
 
 [dependencies]
 unicode-segmentation = "^1.2.0"

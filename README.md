@@ -1,5 +1,8 @@
 # uwc
 
+[![Build Status](https://travis-ci.org/dead10ck/uwc.svg?branch=develop)](https://travis-ci.org/dead10ck/uwc)
+[![crates.io page](https://img.shields.io/crates/v/uwc.svg)](https://crates.io/crates/uwc)
+
 Like `wc`, but unicode-aware, and with line mode.
 
 `uwc` can count:
