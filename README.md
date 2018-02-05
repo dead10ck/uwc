@@ -67,12 +67,21 @@ lines  words  bytes  graphemes  codepoints  filename
 
 ## Why?
 
-It uses the [`unicode-segmentation`](https://crates.io/crates/unicode-segmentation)
-library for most of the heavy lifting, so it will, for example, count all newline
-characters correctly. It will consider all unicode word boundaries, and it counts
-complete grapheme clusters correctly, including Z҉͈͓͈͎a̘͈̠̭l̨̯g̶̬͇̭o̝̹̗͎̙ ͟t͖̙̟̹͇̥̝͡e̥͘x͚̺̭̻͘t͉͔̩̲̘ (it is, however
-important to note the caveats below). It is primarily a fun
-side project for me, and an excuse to learn more about Rust and unicode.
+The goal of this project is to consider unicode rules correctly when counting
+things. Specifically, it should:
+
+* Count all newline characters correctly. This includes lesser-known line breaks,
+  like NEL (U+0085), FF (U+000C), LS (U+2028), and PS (U+2029).
+* Count all words using the Unicode standard's word boundary rules.
+* Count all complete grapheme clusters correctly, so that even edge cases like
+   Z҉͈͓͈͎a̘͈̠̭l̨̯g̶̬͇̭o̝̹̗͎̙ ͟t͖̙̟̹͇̥̝͡e̥͘x͚̺̭̻͘t͉͔̩̲̘, for example, are counted correctly.
+
+It does *not* aim to implement these unicode algorithms, however, so it makes use of
+the [`unicode-segmentation`](https://crates.io/crates/unicode-segmentation) library
+for most of the heavy lifting.
+
+It is primarily a fun side project for me, and an excuse to learn more about Rust
+and unicode.
 
 ## Caveats
 
@@ -87,16 +96,14 @@ It is slower than `wc`. Much slower. On my laptop, I'm measuring about 10x slowe
 My analysis hasn't been extensive, but as far as I can tell, the reasons are:
 
 * It is using unicode algorithms, which are just going to be slower than
-ASCII no matter what.
+  ASCII no matter what.
 * Unfortunately, while the `unicode-segmentation` lib is helpful, it is quite
-limiting. It only exposes its functionality through iterators, which makes
-certain optimizations difficult—like counting everything in a single pass. In
-order to do that, I would need access to a full unicode database to look up
-the character properties of each code point.
+  limiting. It only exposes its functionality through iterators, which makes
+  certain optimizations difficult—like counting everything in a single pass.
 * I am not that experienced with Rust, so it's quite possible I'm not doing
-something as efficiently as possible.
+  something as efficiently as possible.
 * This project is still early, and I am prioritizing correctness over speed
-(though speed is good).
+  (though speed is good).
 * It is not parallelized (yet).
 
 ### Localization
