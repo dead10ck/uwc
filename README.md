@@ -78,7 +78,9 @@ things. Specifically, it should:
 
 It does *not* aim to implement these unicode algorithms, however, so it makes use of
 the [`unicode-segmentation`](https://crates.io/crates/unicode-segmentation) library
-for most of the heavy lifting.
+for most of the heavy lifting. And since Unicode support in the Rust ecosystem is
+not quite mature yet, that has some consequences for this project. See the
+caveats below.
 
 It is primarily a fun side project for me, and an excuse to learn more about Rust
 and unicode.
