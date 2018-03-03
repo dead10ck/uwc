@@ -8,9 +8,8 @@ extern crate structopt;
 #[macro_use]
 extern crate structopt_derive;
 
-extern crate failure;
 #[macro_use]
-extern crate failure_derive;
+extern crate failure;
 
 extern crate env_logger;
 extern crate tabwriter;
