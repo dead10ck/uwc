@@ -138,7 +138,8 @@ fn run() -> Result<bool, Error> {
     let keep_newlines = opts.should_keep_newlines();
     let mode = opts.mode;
 
-    let mut counts: BTreeMap<String, Counted> = opts.files
+    let mut counts: BTreeMap<String, Counted> = opts
+        .files
         .into_iter()
         .map(|fname| {
             (
@@ -202,33 +203,35 @@ fn run() -> Result<bool, Error> {
 
                     Ok((true, cur_counts))
                 })
-
                 // sum up the counts for each line into the total counts for
                 // the file
-                .reduce(|| Ok((true, Counted::new())), |mut acc : Result<_, Error>, r: Result<_, Error>| {
-
-                    if r.is_err() {
-                        return r;
-                    }
-
-                    match acc {
-                        Err(e) => return Err(e),
-                        Ok(ref mut acc_counts_success) => {
-                            // already guaranteed to be ok by the check above
-                            let (mut r_success, mut r_current) = r.unwrap();
-                            let &mut (ref mut acc_success, ref mut acc_counts) = acc_counts_success;
-
-                            for (ctr, total) in r_current {
-                                let entry = acc_counts.entry(ctr).or_insert(0);
-                                *entry += total;
-                            }
-
-                            *acc_success |= r_success;
+                .reduce(
+                    || Ok((true, Counted::new())),
+                    |mut acc: Result<_, Error>, r: Result<_, Error>| {
+                        if r.is_err() {
+                            return r;
                         }
-                    }
 
-                    acc
-                })?;
+                        match acc {
+                            Err(e) => return Err(e),
+                            Ok(ref mut acc_counts_success) => {
+                                // already guaranteed to be ok by the check above
+                                let (mut r_success, mut r_current) = r.unwrap();
+                                let &mut (ref mut acc_success, ref mut acc_counts) =
+                                    acc_counts_success;
+
+                                for (ctr, total) in r_current {
+                                    let entry = acc_counts.entry(ctr).or_insert(0);
+                                    *entry += total;
+                                }
+
+                                *acc_success |= r_success;
+                            }
+                        }
+
+                        acc
+                    },
+                )?;
 
             counter::sum_counts(&mut file_counts, &line_counts);
             success |= chunk_success;
