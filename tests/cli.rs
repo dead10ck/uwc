@@ -5,11 +5,11 @@ extern crate env_logger;
 extern crate log;
 
 use std::collections::{HashSet, VecDeque};
-use std::process::Command;
-use std::fs::{self, File};
-use std::path::{Path, PathBuf};
 use std::ffi::{OsStr, OsString};
+use std::fs::{self, File};
 use std::io::Read;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn main_binary() -> Command {
     let mut cmd = Command::new("cargo");
@@ -108,7 +108,7 @@ fn test_no_args_no_elastic_tabs() {
 
 const FIXTURES_DIR: &str = "tests/fixtures";
 const INPUT_FILE_NAME: &str = "input";
-const OUTPUT_FILE_NAME: &str = "output";
+const STDOUT_FILE_NAME: &str = "stdout";
 const OPTS_FILE_NAME: &str = "opts";
 
 /// Get the input files from the given directory.
@@ -149,7 +149,7 @@ fn soak_string(path: &Path) -> String {
 ///     ├── opts    🠜  This file contains the options to pass to the binary, passed
 ///     │              after the binary name itself, but before the input file's
 ///     │              positional argument.
-///     └── output  🠜  This file contains the expected output. The fields will
+///     └── stdout  🠜  This file contains the expected output. The fields will
 ///                    be parsed, so whitespace formatting doesn't matter, only
 ///                    order.
 /// ```
@@ -172,7 +172,7 @@ fn test_fixtures() {
         let mut args: Vec<OsString> = opts.split_whitespace().map(OsString::from).collect();
         args.extend(input_paths.into_iter().map(PathBuf::into_os_string));
 
-        let expected_output = soak_string(&test_path.join(OUTPUT_FILE_NAME));
+        let expected_output = soak_string(&test_path.join(STDOUT_FILE_NAME));
         let correct_fields = parse_lines(&expected_output, true);
 
         let mut cmd = main_binary_with_args(&args);
