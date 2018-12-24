@@ -1,7 +1,7 @@
-use std::str::FromStr;
 use std::collections::BTreeSet;
+use std::str::FromStr;
 
-use counter::{self, Counter};
+use crate::counter::{self, Counter};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Counts things in strings.")]
@@ -41,11 +41,15 @@ pub struct Opt {
     pub no_elastic: bool,
 
     /// The counting mode.
-    #[structopt(short = "m", long = "mode", default_value = "file",
-                help = "The format checker to use. Line mode will count things \
-                        within lines, and by default, it will not count newline \
-                        characters. See --count-newlines.",
-                possible_values_raw = "&[\"file\", \"line\"]")]
+    #[structopt(
+        short = "m",
+        long = "mode",
+        default_value = "file",
+        help = "The format checker to use. Line mode will count things \
+                within lines, and by default, it will not count newline \
+                characters. See --count-newlines.",
+        possible_values_raw = "&[\"file\", \"line\"]"
+    )]
     pub mode: CountMode,
 
     /// When in line mode, count newline characters.

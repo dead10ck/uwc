@@ -9,6 +9,7 @@ readme = "README.md"
 keywords = [ "wc", "unicode", "word", "count" ]
 categories = [ "command-line-utilities", "text-processing" ]
 license = "MPL-2.0"
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "dead10ck/uwc", branch = "master" }

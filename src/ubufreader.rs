@@ -1,6 +1,6 @@
 use std::io::BufRead;
 
-use error::{Result, UwcError};
+use crate::error::{Result, UwcError};
 
 /// An iterator over `&str`s read from a `BufRead`. For now, it reads lines,
 /// similar to `BufRead::lines`, but it includes the newline character for
@@ -77,9 +77,10 @@ impl<'a, R: BufRead> Iterator for UStrChunksIter<'a, R> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use env_logger;
+    use log::*;
     use std::io;
     use std::io::BufReader;
-    use env_logger;
 
     #[test]
     fn test_basic() {

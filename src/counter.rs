@@ -2,6 +2,8 @@ use std::collections::{BTreeMap, HashSet};
 use std::fmt;
 use std::str;
 
+use lazy_static::*;
+use log::*;
 use unicode_segmentation::UnicodeSegmentation;
 
 const NEL: &'static str = "\u{0085}";
@@ -46,7 +48,8 @@ impl Count for Counter {
         match *self {
             Counter::GraphemeCluster => s.graphemes(true).count(),
             Counter::NumByte => s.len(),
-            Counter::Line => s.graphemes(true)
+            Counter::Line => s
+                .graphemes(true)
                 .filter(|grapheme| NEWLINES.contains(grapheme))
                 .count(),
             Counter::Words => s.unicode_words().count(),
@@ -113,7 +116,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use counter;
+    use crate::counter;
     use env_logger;
 
     #[test]

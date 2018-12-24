@@ -1,23 +1,5 @@
 #[macro_use]
-extern crate log;
-
-#[macro_use]
-extern crate lazy_static;
-
-extern crate structopt;
-#[macro_use]
 extern crate structopt_derive;
-
-#[macro_use]
-extern crate failure;
-
-extern crate env_logger;
-extern crate itertools;
-extern crate tabwriter;
-extern crate unicode_segmentation;
-
-extern crate rayon;
-use rayon::prelude::*;
 
 mod counter;
 mod error;
@@ -33,13 +15,15 @@ use std::sync::{Arc, Mutex};
 
 use failure::Error;
 use itertools::Itertools;
+use log::*;
+use rayon::prelude::*;
 use structopt::StructOpt;
 use tabwriter::TabWriter;
 
-use counter::{Counted, Counter};
-use input::Input;
-use opt::{CountMode, Opt};
-use ubufreader::UStrChunksIter;
+use crate::counter::{Counted, Counter};
+use crate::input::Input;
+use crate::opt::{CountMode, Opt};
+use crate::ubufreader::UStrChunksIter;
 
 const TOTAL: &'static str = "total";
 
@@ -218,7 +202,7 @@ fn run() -> Result<bool, Error> {
                                 Err(e) => return Err(e),
                                 Ok(ref mut acc_counts_success) => {
                                     // already guaranteed to be ok by the check above
-                                    let (mut r_success, mut r_current) = r.unwrap();
+                                    let (r_success, r_current) = r.unwrap();
                                     let &mut (ref mut acc_success, ref mut acc_counts) =
                                         acc_counts_success;
 
