@@ -219,6 +219,8 @@ fn test_fixtures() {
         // if the `errcode` file is present, make sure the exit code is non-zero
         if test_path.join(ERRCODE_FILE_NAME).exists() {
             assert!(!out.status.success(), "Expected a non-zero exit code");
+        } else {
+            assert!(out.status.success(), "Expected a zero exit code");
         }
     }
 }
