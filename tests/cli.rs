@@ -89,11 +89,7 @@ fn test_no_args_no_elastic_tabs() {
     let out = main_binary_with_args(&["--no-elastic"]).output().unwrap();
 
     let stdout = String::from_utf8(out.stdout).unwrap();
-    let correct_output = String::from(
-        r#"lines	words	bytes	filename
-0	0	0	-
-"#,
-    );
+    let correct_output = String::from("lines\twords\tbytes\tfilename\n0\t0\t0\t-\n");
 
     assert_eq!(correct_output, stdout);
 
