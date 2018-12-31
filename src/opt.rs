@@ -47,9 +47,9 @@ pub struct Opt {
         default_value = "file",
         help = "The format checker to use. Line mode will count things \
                 within lines, and by default, it will not count newline \
-                characters. See --count-newlines.",
-        possible_values_raw = "&[\"file\", \"line\"]"
+                characters. See --count-newlines."
     )]
+    #[structopt(raw(possible_values = "&[\"file\", \"line\"]"))]
     pub mode: CountMode,
 
     /// When in line mode, count newline characters.

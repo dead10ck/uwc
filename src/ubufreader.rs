@@ -84,7 +84,7 @@ mod test {
 
     #[test]
     fn test_basic() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
         let mut cursor = io::Cursor::new(b"hello");
         let mut chunks = UStrChunksIter::new(&mut cursor, true);
         let mut s = chunks.next();
@@ -98,7 +98,7 @@ mod test {
 
     #[test]
     fn test_chunks_by_newline() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
         let mut cursor = io::Cursor::new(b"hello\ngoodbye\r\nwindows?");
         let mut chunks = UStrChunksIter::new(&mut cursor, true);
         assert_eq!("hello\n", chunks.next().unwrap().unwrap());
@@ -143,7 +143,7 @@ mod test {
     #[test]
     #[ignore]
     fn test_buffered_stops_in_middle_japanese() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
 
         let cursor = io::Cursor::new(
             "私はガラスを食べられます。それは私を傷つけません。"

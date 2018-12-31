@@ -162,7 +162,7 @@ fn soak_string(path: &Path) -> Option<String> {
 /// ```
 #[test]
 fn test_fixtures() {
-    let _ = env_logger::init();
+    let _ = env_logger::try_init();
 
     let fixtures_path = Path::new(FIXTURES_DIR);
 

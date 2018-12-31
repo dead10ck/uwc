@@ -28,7 +28,7 @@ use crate::ubufreader::UStrChunksIter;
 const TOTAL: &'static str = "total";
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     let run_result = run();
 

@@ -136,7 +136,7 @@ mod test {
 
     #[test]
     fn test_count_counts_lines() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
 
         // * \r\n is a single graheme cluster
         // * trailing newlines are counted
@@ -180,7 +180,7 @@ mod test {
 
     #[test]
     fn test_count_counts_words() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
 
         let i_can_eat_glass =
             "Μπορῶ νὰ φάω σπασμένα γυαλιὰ χωρὶς νὰ πάθω τίποτα.";
@@ -202,7 +202,7 @@ mod test {
 
     #[test]
     fn test_count_counts_codepoints() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
 
         // these are NOT the same! One is e + ́́ , and one is é, a single codepoint
         let one = "é";
