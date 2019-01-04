@@ -106,6 +106,113 @@ where
     totals
 }
 
+fn count_file(
+    file_name: &str,
+    mut file_counts: &mut Counted,
+    opts: &Opt,
+    output_writer: Arc<Mutex<Write + Send + Sync>>,
+) -> Result<bool, Error> {
+    let keep_newlines = opts.should_keep_newlines();
+    let counters = opts.get_counters();
+
+    info!("Counting file: {}", file_name);
+
+    let mut success = true;
+
+    let input = match Input::new(&file_name) {
+        Ok(i) => i,
+        Err(e) => {
+            eprintln!("{}: {}", &file_name, e);
+            return Err(Error::from(e));
+        }
+    };
+
+    let mut reader = BufReader::new(input);
+    let chunks = UStrChunksIter::new(&mut reader, keep_newlines);
+
+    for chunk in &chunks.chunks(10_000) {
+        let chunk: Vec<_> = chunk.collect();
+
+        let (chunk_success, line_counts) = chunk
+            .into_par_iter()
+            .enumerate()
+            .map(|(line_no, line)| {
+                let line_no = line_no + 1; // to start at 1
+                let line = match line {
+                    Ok(l) => l,
+                    Err(e) => {
+                        eprintln!("{}:{}: {}", file_name, line_no, e);
+                        return Ok((false, BTreeMap::new()));
+                    }
+                };
+
+                debug!("line: {:?}", line);
+
+                let cur_counts = counter::count(&counters, &line);
+
+                if opts.mode == CountMode::Line {
+                    let name = file_name_with_line(&file_name, line_no);
+                    write_counts(
+                        &mut *output_writer.lock().unwrap(),
+                        &cur_counts,
+                        Some(&name),
+                    )?;
+                }
+
+                Ok((true, cur_counts))
+            })
+            // sum up the counts for each line into the total counts for
+            // the file
+            .reduce(
+                || Ok((true, Counted::new())),
+                |mut acc: Result<_, Error>, r: Result<_, Error>| {
+                    if r.is_err() {
+                        return r;
+                    }
+
+                    match acc {
+                        Err(e) => return Err(e),
+                        Ok(ref mut acc_counts_success) => {
+                            // already guaranteed to be ok by the check above
+                            let (r_success, r_current) = r.unwrap();
+                            let &mut (ref mut acc_success, ref mut acc_counts) = acc_counts_success;
+
+                            for (ctr, total) in r_current {
+                                let entry = acc_counts.entry(ctr).or_insert(0);
+                                *entry += total;
+                            }
+
+                            *acc_success &= r_success;
+                        }
+                    }
+
+                    acc
+                },
+            )?;
+
+        counter::sum_counts(&mut file_counts, &line_counts);
+        success &= chunk_success;
+    }
+
+    match opts.mode {
+        CountMode::File => write_counts(
+            &mut *output_writer.lock().unwrap(),
+            &file_counts,
+            Some(&file_name),
+        )?,
+        CountMode::Line => {
+            let name = file_name_with_line(&file_name, TOTAL);
+            write_counts(
+                &mut *output_writer.lock().unwrap(),
+                &file_counts,
+                Some(&name),
+            )?
+        }
+    }
+
+    Ok(success)
+}
+
 /// The return type indicates error conditions. In some error cases, it will just
 /// print the error and continue counting (e.g., if the user passes a directory
 /// as input). A return value of Ok(true) indicates that the run was successful
@@ -118,11 +225,11 @@ fn run() -> Result<bool, Error> {
     debug!("opts: {:?}", opts);
 
     let counters = opts.get_counters();
-    let keep_newlines = opts.should_keep_newlines();
     let mode = opts.mode;
 
     let mut counts: BTreeMap<String, Counted> = opts
         .files
+        .clone()
         .into_iter()
         .map(|fname| {
             (
@@ -146,95 +253,7 @@ fn run() -> Result<bool, Error> {
 
     let success = counts
         .par_iter_mut()
-        .map(|(file_name, mut file_counts)| {
-            info!("Counting file: {}", file_name);
-
-            let mut success = true;
-
-            let input = match Input::new(&file_name) {
-                Ok(i) => i,
-                Err(e) => {
-                    eprintln!("{}: {}", &file_name, e);
-                    return Err(Error::from(e));
-                }
-            };
-
-            let mut reader = BufReader::new(input);
-            let chunks = UStrChunksIter::new(&mut reader, keep_newlines);
-
-            for chunk in &chunks.chunks(10_000) {
-                let chunk: Vec<_> = chunk.collect();
-
-                let (chunk_success, line_counts) = chunk
-                    .into_par_iter()
-                    .enumerate()
-                    .map(|(line_no, line)| {
-                        let line_no = line_no + 1; // to start at 1
-                        let line = match line {
-                            Ok(l) => l,
-                            Err(e) => {
-                                eprintln!("{}:{}: {}", file_name, line_no, e);
-                                return Ok((false, BTreeMap::new()));
-                            }
-                        };
-
-                        debug!("line: {:?}", line);
-
-                        let cur_counts = counter::count(&counters, &line);
-
-                        if mode == CountMode::Line {
-                            let name = file_name_with_line(&file_name, line_no);
-                            write_counts(&mut *writer.lock().unwrap(), &cur_counts, Some(&name))?;
-                        }
-
-                        Ok((true, cur_counts))
-                    })
-                    // sum up the counts for each line into the total counts for
-                    // the file
-                    .reduce(
-                        || Ok((true, Counted::new())),
-                        |mut acc: Result<_, Error>, r: Result<_, Error>| {
-                            if r.is_err() {
-                                return r;
-                            }
-
-                            match acc {
-                                Err(e) => return Err(e),
-                                Ok(ref mut acc_counts_success) => {
-                                    // already guaranteed to be ok by the check above
-                                    let (r_success, r_current) = r.unwrap();
-                                    let &mut (ref mut acc_success, ref mut acc_counts) =
-                                        acc_counts_success;
-
-                                    for (ctr, total) in r_current {
-                                        let entry = acc_counts.entry(ctr).or_insert(0);
-                                        *entry += total;
-                                    }
-
-                                    *acc_success &= r_success;
-                                }
-                            }
-
-                            acc
-                        },
-                    )?;
-
-                counter::sum_counts(&mut file_counts, &line_counts);
-                success &= chunk_success;
-            }
-
-            match mode {
-                CountMode::File => {
-                    write_counts(&mut *writer.lock().unwrap(), &file_counts, Some(&file_name))?
-                }
-                CountMode::Line => {
-                    let name = file_name_with_line(&file_name, TOTAL);
-                    write_counts(&mut *writer.lock().unwrap(), &file_counts, Some(&name))?
-                }
-            }
-
-            Ok(success)
-        })
+        .map(|(file_name, file_counts)| count_file(file_name, file_counts, &opts, writer.clone()))
         .reduce(
             || Ok(true),
             |acc_result, success_result| {

@@ -59,6 +59,7 @@ pub struct Opt {
     /// Sets the input file(s) to use. "-" gets treated as stdin.
     #[structopt(default_value = "-")]
     pub files: Vec<String>,
+    // TODO: add option for chunk size
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, StructOpt)]
