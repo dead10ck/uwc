@@ -56,10 +56,18 @@ pub struct Opt {
     #[structopt(long = "count-newlines")]
     pub count_newlines: bool,
 
+    /// How many "chunks" of the file to operate on in parallel. (As of this
+    /// version, "chunks" means lines.) You probably don't need to mess with this.
+    /// uwc will wait until it reads this many chunks (or the end of the file)
+    /// to start counting. For normal files, you won't notice this, but if
+    /// you're piping a slow command into uwc, you may wonder why it doesn't
+    /// seem to be counting anything. You can set this value lower for this case.
+    #[structopt(long = "chunk-size", default_value = "10000")]
+    pub chunk_size: usize,
+
     /// Sets the input file(s) to use. "-" gets treated as stdin.
     #[structopt(default_value = "-")]
     pub files: Vec<String>,
-    // TODO: add option for chunk size
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, StructOpt)]

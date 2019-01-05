@@ -194,7 +194,7 @@ fn count_file(
     let mut reader = BufReader::new(input);
     let chunks = UStrChunksIter::new(&mut reader, keep_newlines);
 
-    for chunk in &chunks.chunks(10_000) {
+    for chunk in &chunks.chunks(opts.chunk_size) {
         let chunk: Vec<_> = chunk.collect();
 
         let (chunk_success, line_counts) =
