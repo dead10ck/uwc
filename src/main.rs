@@ -110,6 +110,7 @@ fn count_chunks(
     file_name: &str,
     chunk: Vec<error::Result<String>>,
     opts: &Opt,
+    line_offset: usize,
     output_writer: &mut Arc<Mutex<Write + Send + Sync>>,
 ) -> Result<(bool, Counted), Error> {
     let counters = opts.get_counters();
@@ -118,7 +119,7 @@ fn count_chunks(
         .into_par_iter()
         .enumerate()
         .map(|(line_no, line)| {
-            let line_no = line_no + 1; // to start at 1
+            let line_no = line_no + line_offset;
             let line = match line {
                 Ok(l) => l,
                 Err(e) => {
@@ -194,11 +195,16 @@ fn count_file(
     let mut reader = BufReader::new(input);
     let chunks = UStrChunksIter::new(&mut reader, keep_newlines);
 
+    let mut line_no = 1;
     for chunk in &chunks.chunks(opts.chunk_size) {
         let chunk: Vec<_> = chunk.collect();
+        let num_lines = chunk.len();
 
         let (chunk_success, line_counts) =
-            count_chunks(file_name, chunk, opts, &mut output_writer)?;
+            count_chunks(file_name, chunk, opts, line_no, &mut output_writer)?;
+
+        // NOTE: Fix this if the chunks are ever a different unit than lines.
+        line_no += num_lines;
 
         counter::sum_counts(&mut file_counts, &line_counts);
         success &= chunk_success;
