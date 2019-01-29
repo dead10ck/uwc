@@ -90,9 +90,9 @@ where
     Ok(writer.write_all(&out_str.as_bytes())?)
 }
 
-fn sum_counts<'a, I>(counts: I) -> BTreeMap<Counter, usize>
+fn sum_counts<'a, I>(counts: I) -> Counted
 where
-    I: IntoIterator<Item = &'a BTreeMap<Counter, usize>>,
+    I: IntoIterator<Item = &'a Counted>,
 {
     let mut totals = BTreeMap::new();
 
