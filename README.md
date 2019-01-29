@@ -105,19 +105,19 @@ For now, you can use `iconv` to convert non-UTF-8 files first.
 
 ### Speed
 
-It is slower than `wc`. Much slower. On my laptop, I'm measuring about 10x slower.
-My analysis hasn't been extensive, but as far as I can tell, the reasons are:
+It is slower than `wc`. My analysis hasn't been extensive, but as far as I can
+tell, the reasons are:
 
 * It is using unicode algorithms, which are just going to be slower than
   ASCII no matter what.
-* Unfortunately, while the `unicode-segmentation` lib is helpful, it is quite
-  limiting. It only exposes its functionality through iterators, which makes
-  certain optimizations difficult—like counting everything in a single pass.
 * I am not that experienced with Rust, so it's quite possible I'm not doing
   something as efficiently as possible.
-* This project is still early, and I am prioritizing correctness over speed
+* My free time is limited, and I am prioritizing correctness over speed
   (though speed is good).
-* It is not parallelized (yet).
+
+With that said, parallelization helps. With testing on my local laptop with
+larger data sets, the speed is within an order of magnitude of `wc`. I measured
+`uwc` being 3x slower than `wc` on a collection of 18 MiB of text files.
 
 ### Localization
 
