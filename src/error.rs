@@ -1,5 +1,7 @@
-use io;
+use crate::io;
 use std;
+
+use failure::Fail;
 
 /// An error that can occur during a run of `uwc`.
 #[derive(Debug, Fail)]
