@@ -90,22 +90,6 @@ where
     Ok(writer.write_all(&out_str.as_bytes())?)
 }
 
-fn sum_counts<'a, I>(counts: I) -> Counted
-where
-    I: IntoIterator<Item = &'a Counted>,
-{
-    let mut totals = BTreeMap::new();
-
-    for counts in counts {
-        for (counter, count) in counts.iter() {
-            let c = totals.entry(*counter).or_insert(0);
-            *c += count;
-        }
-    }
-
-    totals
-}
-
 fn count_chunks(
     file_name: &str,
     chunk: Vec<error::Result<String>>,
@@ -282,7 +266,7 @@ fn run() -> Result<bool, Error> {
     info!("final_counts: {:?}", counts);
 
     if mode == CountMode::File && counts.len() > 1 {
-        let totals = sum_counts(counts.values());
+        let totals = counter::sum_all_counts(counts.values());
         write_counts(&mut *writer.lock().unwrap(), &totals, Some(TOTAL))?;
     }
 

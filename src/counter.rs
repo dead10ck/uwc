@@ -37,6 +37,20 @@ pub fn sum_counts(accum: &mut Counted, other_counts: &Counted) {
     }
 }
 
+/// Sums all the `Counted` instances into a new one.
+pub fn sum_all_counts<'a, I>(counts: I) -> Counted
+where
+    I: IntoIterator<Item = &'a Counted>,
+{
+    let mut totals = BTreeMap::new();
+
+    for counts in counts {
+        sum_counts(&mut totals, counts);
+    }
+
+    totals
+}
+
 /// Something that counts things in `&str`s.
 pub trait Count {
     /// Counts something in the given `&str`.
