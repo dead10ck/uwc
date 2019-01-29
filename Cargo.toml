@@ -1,7 +1,7 @@
 [package]
 name = "uwc"
-version = "0.1.0"
-authors = ["Skyler Hawthorne <skylerhawthorne@gmail.com>"]
+version = "0.2.0"
+authors = ["Skyler Hawthorne <skyler@dead10ck.com>"]
 description = "Counts things in unicode text files"
 respository = "https://github.com/dead10ck/uwc"
 readme = "README.md"
