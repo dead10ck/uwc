@@ -5,11 +5,11 @@ extern crate env_logger;
 extern crate log;
 
 use std::collections::{HashSet, VecDeque};
-use std::process::Command;
-use std::fs::{self, File};
-use std::path::{Path, PathBuf};
 use std::ffi::{OsStr, OsString};
+use std::fs::{self, File};
 use std::io::Read;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn main_binary() -> Command {
     let mut cmd = Command::new("cargo");
@@ -89,11 +89,7 @@ fn test_no_args_no_elastic_tabs() {
     let out = main_binary_with_args(&["--no-elastic"]).output().unwrap();
 
     let stdout = String::from_utf8(out.stdout).unwrap();
-    let correct_output = String::from(
-        r#"lines	words	bytes	filename
-0	0	0	-
-"#,
-    );
+    let correct_output = String::from("lines\twords\tbytes\tfilename\n0\t0\t0\t-\n");
 
     assert_eq!(correct_output, stdout);
 
@@ -108,7 +104,9 @@ fn test_no_args_no_elastic_tabs() {
 
 const FIXTURES_DIR: &str = "tests/fixtures";
 const INPUT_FILE_NAME: &str = "input";
-const OUTPUT_FILE_NAME: &str = "output";
+const STDOUT_FILE_NAME: &str = "stdout";
+const STDERR_FILE_NAME: &str = "stderr";
+const ERRCODE_FILE_NAME: &str = "errcode";
 const OPTS_FILE_NAME: &str = "opts";
 
 /// Get the input files from the given directory.
@@ -128,11 +126,15 @@ fn get_input_files(base: &Path) -> Vec<PathBuf> {
 }
 
 /// Soak up the given file into a String, unwrapping along the way.
-fn soak_string(path: &Path) -> String {
+fn soak_string(path: &Path) -> Option<String> {
+    if !path.exists() {
+        return None;
+    }
+
     let mut file = File::open(path).expect(&format!("error on test entry: {:?}", path));
     let mut string = String::new();
     file.read_to_string(&mut string).unwrap();
-    string
+    Some(string)
 }
 
 /// In the 'fixtures' directory, there is a set of fixed files that provide
@@ -149,13 +151,18 @@ fn soak_string(path: &Path) -> String {
 ///     ├── opts    🠜  This file contains the options to pass to the binary, passed
 ///     │              after the binary name itself, but before the input file's
 ///     │              positional argument.
-///     └── output  🠜  This file contains the expected output. The fields will
-///                    be parsed, so whitespace formatting doesn't matter, only
-///                    order.
+///     ├── stdout  🠜  This file contains the expected stdout. The fields will
+///     │              be parsed, so whitespace formatting doesn't matter, only
+///     │              order.
+///     ├── stderr  🠜  This file contains the expected stderr. It will take each
+///     │              line and verify that it is a substring of some line in the
+///     │              test run's stderr.
+///     └── errcode 🠜  If this file is present, it indicates the run should fail—
+///                    i.e., terminate with a non-zero exit code.
 /// ```
 #[test]
 fn test_fixtures() {
-    let _ = env_logger::init();
+    let _ = env_logger::try_init();
 
     let fixtures_path = Path::new(FIXTURES_DIR);
 
@@ -169,20 +176,51 @@ fn test_fixtures() {
         let opts = soak_string(&test_path.join(OPTS_FILE_NAME));
         let input_paths = get_input_files(&test_path);
 
-        let mut args: Vec<OsString> = opts.split_whitespace().map(OsString::from).collect();
-        args.extend(input_paths.into_iter().map(PathBuf::into_os_string));
+        let mut args: Vec<OsString> = match opts {
+            Some(opts_str) => opts_str.split_whitespace().map(OsString::from).collect(),
+            None => Vec::new(),
+        };
 
-        let expected_output = soak_string(&test_path.join(OUTPUT_FILE_NAME));
-        let correct_fields = parse_lines(&expected_output, true);
+        args.extend(input_paths.into_iter().map(PathBuf::into_os_string));
 
         let mut cmd = main_binary_with_args(&args);
         debug!("Running command: {:?}", cmd);
 
         let out = cmd.output().unwrap();
-        let stdout = String::from_utf8(out.stdout).unwrap();
-        let fields = parse_lines(&stdout, true);
 
-        assert_eq!(correct_fields, fields);
+        // parse the fields from stdout and compare for exact equality
+        let expected_stdout = soak_string(&test_path.join(STDOUT_FILE_NAME));
+
+        if expected_stdout.is_some() {
+            let stdout = String::from_utf8(out.stdout).unwrap();
+            let fields = parse_lines(&stdout, true);
+            let expected_stdout = expected_stdout.unwrap();
+            let correct_fields = parse_lines(&expected_stdout, true);
+            assert_eq!(correct_fields, fields);
+        }
+
+        // check that the string inside the fixture file is a substring of
+        // the actual stderr
+        let expected_stderr = soak_string(&test_path.join(STDERR_FILE_NAME));
+
+        if expected_stderr.is_some() {
+            let expected_stderr = expected_stderr.unwrap();
+            let expected_stderr_trimmed = expected_stderr.trim();
+            let stderr = String::from_utf8(out.stderr).unwrap();
+
+            assert!(
+                stderr.contains(&expected_stderr_trimmed),
+                "Wrong stderr. Expected `{}`, got `{}`",
+                expected_stderr_trimmed,
+                stderr.trim()
+            );
+        }
+
+        // if the `errcode` file is present, make sure the exit code is non-zero
+        if test_path.join(ERRCODE_FILE_NAME).exists() {
+            assert!(!out.status.success(), "Expected a non-zero exit code");
+        } else {
+            assert!(out.status.success(), "Expected a zero exit code");
+        }
     }
 }
-

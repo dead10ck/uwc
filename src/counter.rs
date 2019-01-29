@@ -1,7 +1,9 @@
+use std::collections::{BTreeMap, HashSet};
 use std::fmt;
 use std::str;
-use std::collections::{BTreeMap, HashSet};
 
+use lazy_static::*;
+use log::*;
 use unicode_segmentation::UnicodeSegmentation;
 
 const NEL: &'static str = "\u{0085}";
@@ -27,6 +29,28 @@ lazy_static! {
 
 pub type Counted = BTreeMap<Counter, usize>;
 
+/// Take all the counts in `other_counts` and sum them into `accum`.
+pub fn sum_counts(accum: &mut Counted, other_counts: &Counted) {
+    for (counter, count) in other_counts {
+        let entry = accum.entry(*counter).or_insert(0);
+        *entry += count;
+    }
+}
+
+/// Sums all the `Counted` instances into a new one.
+pub fn sum_all_counts<'a, I>(counts: I) -> Counted
+where
+    I: IntoIterator<Item = &'a Counted>,
+{
+    let mut totals = BTreeMap::new();
+
+    for counts in counts {
+        sum_counts(&mut totals, counts);
+    }
+
+    totals
+}
+
 /// Something that counts things in `&str`s.
 pub trait Count {
     /// Counts something in the given `&str`.
@@ -38,7 +62,8 @@ impl Count for Counter {
         match *self {
             Counter::GraphemeCluster => s.graphemes(true).count(),
             Counter::NumByte => s.len(),
-            Counter::Line => s.graphemes(true)
+            Counter::Line => s
+                .graphemes(true)
                 .filter(|grapheme| NEWLINES.contains(grapheme))
                 .count(),
             Counter::Words => s.unicode_words().count(),
@@ -104,9 +129,9 @@ where
 
 #[cfg(test)]
 mod test {
-    use env_logger;
-    use counter;
     use super::*;
+    use crate::counter;
+    use env_logger;
 
     #[test]
     fn test_count_hello() {
@@ -125,7 +150,7 @@ mod test {
 
     #[test]
     fn test_count_counts_lines() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
 
         // * \r\n is a single graheme cluster
         // * trailing newlines are counted
@@ -169,7 +194,7 @@ mod test {
 
     #[test]
     fn test_count_counts_words() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
 
         let i_can_eat_glass =
             "Μπορῶ νὰ φάω σπασμένα γυαλιὰ χωρὶς νὰ πάθω τίποτα.";
@@ -191,7 +216,7 @@ mod test {
 
     #[test]
     fn test_count_counts_codepoints() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
 
         // these are NOT the same! One is e + ́́ , and one is é, a single codepoint
         let one = "é";
@@ -214,4 +239,3 @@ mod test {
         assert_eq!(correct_counts, counts);
     }
 }
-

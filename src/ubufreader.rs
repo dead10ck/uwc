@@ -1,6 +1,6 @@
 use std::io::BufRead;
 
-use error::{Result, UwcError};
+use crate::error::{Result, UwcError};
 
 /// An iterator over `&str`s read from a `BufRead`. For now, it reads lines,
 /// similar to `BufRead::lines`, but it includes the newline character for
@@ -77,13 +77,14 @@ impl<'a, R: BufRead> Iterator for UStrChunksIter<'a, R> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use env_logger;
+    use log::*;
     use std::io;
     use std::io::BufReader;
-    use env_logger;
 
     #[test]
     fn test_basic() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
         let mut cursor = io::Cursor::new(b"hello");
         let mut chunks = UStrChunksIter::new(&mut cursor, true);
         let mut s = chunks.next();
@@ -97,7 +98,7 @@ mod test {
 
     #[test]
     fn test_chunks_by_newline() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
         let mut cursor = io::Cursor::new(b"hello\ngoodbye\r\nwindows?");
         let mut chunks = UStrChunksIter::new(&mut cursor, true);
         assert_eq!("hello\n", chunks.next().unwrap().unwrap());
@@ -142,7 +143,7 @@ mod test {
     #[test]
     #[ignore]
     fn test_buffered_stops_in_middle_japanese() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
 
         let cursor = io::Cursor::new(
             "私はガラスを食べられます。それは私を傷つけません。"
@@ -165,4 +166,3 @@ mod test {
         assert!(chunks.next().is_none());
     }
 }
-

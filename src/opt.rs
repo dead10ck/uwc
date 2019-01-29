@@ -1,7 +1,7 @@
-use std::str::FromStr;
 use std::collections::BTreeSet;
+use std::str::FromStr;
 
-use counter::{self, Counter};
+use crate::counter::{self, Counter};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Counts things in strings.")]
@@ -41,16 +41,29 @@ pub struct Opt {
     pub no_elastic: bool,
 
     /// The counting mode.
-    #[structopt(short = "m", long = "mode", default_value = "file",
-                help = "The format checker to use. Line mode will count things \
-                        within lines, and by default, it will not count newline \
-                        characters. See --count-newlines.",
-                possible_values_raw = "&[\"file\", \"line\"]")]
+    #[structopt(
+        short = "m",
+        long = "mode",
+        default_value = "file",
+        help = "The format checker to use. Line mode will count things \
+                within lines, and by default, it will not count newline \
+                characters. See --count-newlines."
+    )]
+    #[structopt(raw(possible_values = "&[\"file\", \"line\"]"))]
     pub mode: CountMode,
 
     /// When in line mode, count newline characters.
     #[structopt(long = "count-newlines")]
     pub count_newlines: bool,
+
+    /// How many "chunks" of the file to operate on in parallel. (As of this
+    /// version, "chunks" means lines.) You probably don't need to mess with this.
+    /// uwc will wait until it reads this many chunks (or the end of the file)
+    /// to start counting. For normal files, you won't notice this, but if
+    /// you're piping a slow command into uwc, you may wonder why it doesn't
+    /// seem to be counting anything. You can set this value lower for this case.
+    #[structopt(long = "chunk-size", default_value = "10000")]
+    pub chunk_size: usize,
 
     /// Sets the input file(s) to use. "-" gets treated as stdin.
     #[structopt(default_value = "-")]
@@ -124,4 +137,3 @@ impl Opt {
         }
     }
 }
-
