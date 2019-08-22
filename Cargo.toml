@@ -3,7 +3,7 @@ name = "uwc"
 version = "0.3.1-dev"
 authors = ["Skyler Hawthorne <skyler@dead10ck.com>"]
 description = "Counts things in unicode text files"
-respository = "https://gitlab.com/dead10ck/uwc"
+repository = "https://gitlab.com/dead10ck/uwc"
 readme = "README.md"
 
 keywords = [ "wc", "unicode", "word", "count" ]
