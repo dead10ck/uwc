@@ -95,7 +95,7 @@ fn count_chunks(
     chunk: Vec<error::Result<String>>,
     opts: &Opt,
     line_offset: usize,
-    output_writer: &mut Arc<Mutex<Write + Send + Sync>>,
+    output_writer: &mut Arc<Mutex<dyn Write + Send + Sync>>,
 ) -> Result<(bool, Counted), Error> {
     let counters = opts.get_counters();
 
@@ -160,7 +160,7 @@ fn count_file(
     file_name: &str,
     mut file_counts: &mut Counted,
     opts: &Opt,
-    mut output_writer: Arc<Mutex<Write + Send + Sync>>,
+    mut output_writer: Arc<Mutex<dyn Write + Send + Sync>>,
 ) -> Result<bool, Error> {
     let keep_newlines = opts.should_keep_newlines();
 
@@ -241,7 +241,7 @@ fn run() -> Result<bool, Error> {
 
     let stdout = io::stdout();
 
-    let writer: Arc<Mutex<Write + Send + Sync>> = if opts.no_elastic {
+    let writer: Arc<Mutex<dyn Write + Send + Sync>> = if opts.no_elastic {
         Arc::new(Mutex::new(stdout))
     } else {
         Arc::new(Mutex::new(TabWriter::new(stdout)))
