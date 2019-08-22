@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2019-08-22
+
+* Update dependencies
+* Fix typo in `repository` field of the `Cargo.toml`, so the repository link
+  now shows up in crates.io.
+
+## [0.3.0] - 2019-08-02
+
+In this release, the minor version was bumped by mistake.
+
+* Update dependencies
+
 ## [0.2.0] - 2019-01-28
 
 ### Added
