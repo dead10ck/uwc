@@ -1,6 +1,6 @@
 [package]
 name = "uwc"
-version = "0.3.1"
+version = "0.3.2-dev"
 authors = ["Skyler Hawthorne <skyler@dead10ck.com>"]
 description = "Counts things in unicode text files"
 repository = "https://gitlab.com/dead10ck/uwc"
