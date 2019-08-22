@@ -1,1 +1,2 @@
 dev-version-ext = "dev"
+disable-publish = true
