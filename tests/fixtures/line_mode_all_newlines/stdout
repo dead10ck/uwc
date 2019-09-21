@@ -1,0 +1,10 @@
+lines  words  bytes  graphemes  codepoints  filename
+0      1      3      3          3           tests/fixtures/line_mode_all_newlines/input:1
+0      1      3      3          3           tests/fixtures/line_mode_all_newlines/input:2
+0      0      0      0          0           tests/fixtures/line_mode_all_newlines/input:3
+0      1      3      3          3           tests/fixtures/line_mode_all_newlines/input:4
+0      1      4      4          4           tests/fixtures/line_mode_all_newlines/input:5
+0      0      0      0          0           tests/fixtures/line_mode_all_newlines/input:6
+0      1      2      2          2           tests/fixtures/line_mode_all_newlines/input:7
+0      0      0      0          0           tests/fixtures/line_mode_all_newlines/input:8
+0      5      15     15         15          tests/fixtures/line_mode_all_newlines/input:total
