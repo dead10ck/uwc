@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate structopt_derive;
 
+mod constants;
 mod counter;
 mod error;
 mod input;
