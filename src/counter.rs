@@ -1,31 +1,11 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::fmt;
 use std::str;
 
-use lazy_static::*;
 use log::*;
 use unicode_segmentation::UnicodeSegmentation;
 
-const NEL: &'static str = "\u{0085}";
-const FF: &'static str = "\u{000C}";
-const LS: &'static str = "\u{2028}";
-const PS: &'static str = "\u{2029}";
-
-lazy_static! {
-    /// New line sequences according to:
-    /// http://www.unicode.org/standard/reports/tr13/tr13-5.html
-    static ref NEWLINES: HashSet<&'static str> = {
-        let mut s = HashSet::new();
-        s.insert("\r");
-        s.insert("\n");
-        s.insert("\r\n");
-        s.insert(NEL);
-        s.insert(FF);
-        s.insert(LS);
-        s.insert(PS);
-        s
-    };
-}
+use crate::constants::NEWLINES;
 
 pub type Counted = BTreeMap<Counter, usize>;
 
@@ -131,6 +111,7 @@ where
 mod test {
     use super::*;
     use crate::counter;
+    use crate::constants::*;
     use env_logger;
 
     #[test]
