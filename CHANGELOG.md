@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2019-10-01
+
+* Fix a bug where line mode was showing multiple lines in a single line.
+* Change to 1.0, as I think this package is feature complete.
+
 ## [0.3.1] - 2019-08-22
 
 * Update dependencies
