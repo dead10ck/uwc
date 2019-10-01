@@ -84,9 +84,6 @@ for most of the heavy lifting. And since Unicode support in the Rust ecosystem i
 not quite mature yet, that has some consequences for this project. See the
 caveats below.
 
-It is primarily a fun side project for me, and an excuse to learn more about Rust
-and unicode.
-
 ## Installation
 
 It is published on crates.io, so simply:
@@ -102,6 +99,16 @@ $ cargo install uwc
 It only supports UTF-8 files. UTF-16 can go on my to-do list if there is demand.
 For now, you can use `iconv` to convert non-UTF-8 files first.
 
+### Memory usage
+
+The current implementation will always read complete lines before proceeding to
+do its counts; without hand-rolling my own streaming implementation of the
+Unicode line splitting algorithm, this is necessary for correctness with line
+mode. The consequence of this is that if you give it files with very large
+lines, it will use memory proportional to the size of the lines. If you give it
+a file with no newline sequences, it will soak up the whole file into memory.
+Beware.
+
 ### Speed
 
 It is slower than `wc`. My analysis hasn't been extensive, but as far as I can
@@ -114,9 +121,10 @@ tell, the reasons are:
 * My free time is limited, and I am prioritizing correctness over speed
   (though speed is good).
 
-With that said, parallelization helps. With testing on my local laptop with
-larger data sets, the speed is within an order of magnitude of `wc`. I measured
-`uwc` being 3x slower than `wc` on a collection of 18 MiB of text files.
+With that said, it is parallelized, which helps. With testing on my local
+laptop with larger data sets, the speed is within an order of magnitude of
+`wc`. I measured `uwc` being 1.5x slower than `wc` on a collection of 18 MiB of
+text files.
 
 ### Localization
 
