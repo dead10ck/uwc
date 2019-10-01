@@ -196,7 +196,7 @@ fn test_fixtures() {
             let fields = parse_lines(&stdout, true);
             let expected_stdout = expected_stdout.unwrap();
             let correct_fields = parse_lines(&expected_stdout, true);
-            assert_eq!(correct_fields, fields);
+            assert_eq!(correct_fields, fields, "expected: {:#?}\ngot: {:#?}", correct_fields, fields);
         }
 
         // check that the string inside the fixture file is a substring of

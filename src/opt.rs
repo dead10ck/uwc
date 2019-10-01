@@ -1,10 +1,16 @@
 use std::collections::BTreeSet;
 use std::str::FromStr;
 
+use structopt::clap::AppSettings;
+
 use crate::counter::{self, Counter};
 
 #[derive(StructOpt, Debug)]
-#[structopt(about = "Counts things in strings.")]
+#[structopt(
+    name = "uwc",
+    about = "Counts things in strings.",
+    raw(setting = "AppSettings::ColoredHelp")
+)]
 pub struct Opt {
     /// Counts the grapheme clusters
     #[structopt(short = "c", long = "grapheme-clusters")]
