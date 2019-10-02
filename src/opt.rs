@@ -9,7 +9,8 @@ use crate::counter::{self, Counter};
 #[structopt(
     name = "uwc",
     about = "Counts things in strings.",
-    raw(setting = "AppSettings::ColoredHelp")
+    author,
+    setting = AppSettings::ColoredHelp
 )]
 pub struct Opt {
     /// Counts the grapheme clusters
@@ -55,7 +56,7 @@ pub struct Opt {
                 within lines, and by default, it will not count newline \
                 characters. See --count-newlines."
     )]
-    #[structopt(raw(possible_values = "&[\"file\", \"line\"]"))]
+    #[structopt(possible_values = &["file", "line"])]
     pub mode: CountMode,
 
     /// When in line mode, count newline characters.
