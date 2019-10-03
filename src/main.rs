@@ -173,7 +173,7 @@ fn count_file(
         Ok(i) => i,
         Err(e) => {
             eprintln!("{}: {}", &file_name, e);
-            return Err(Error::from(e));
+            return Ok(false);
         }
     };
 

@@ -98,6 +98,37 @@ fn test_no_args_no_elastic_tabs() {
     assert_eq!(0, stderr.len());
 }
 
+#[test]
+fn test_file_not_found() {
+    let non_existent_file = "nofile";
+    let test_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let self_test_file = Path::join(test_dir, "tests/cli.rs");
+    let self_test_file_str = self_test_file.to_str().unwrap();
+
+    let mut cmd = main_binary_with_args(&[non_existent_file, self_test_file_str]);
+    assert!(!cmd.status().unwrap().success(), "should fail");
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    let stdout = String::from_utf8(output.stdout).unwrap();
+
+    let expected_err_msg = format!("{}: No such file", non_existent_file);
+
+    assert!(
+        stderr.contains(&expected_err_msg),
+        "expected '{}' in stderr, got: '{}'",
+        expected_err_msg,
+        stderr
+    );
+
+    assert!(
+        stdout.contains(self_test_file_str),
+        "expected '{}' in stdout, got: '{}'",
+        self_test_file_str,
+        stdout
+    );
+}
+
 // ----------------------------
 //      FIXTURE TESTS
 // ----------------------------
@@ -196,7 +227,11 @@ fn test_fixtures() {
             let fields = parse_lines(&stdout, true);
             let expected_stdout = expected_stdout.unwrap();
             let correct_fields = parse_lines(&expected_stdout, true);
-            assert_eq!(correct_fields, fields, "expected: {:#?}\ngot: {:#?}", correct_fields, fields);
+            assert_eq!(
+                correct_fields, fields,
+                "expected: {:#?}\ngot: {:#?}",
+                correct_fields, fields
+            );
         }
 
         // check that the string inside the fixture file is a substring of
