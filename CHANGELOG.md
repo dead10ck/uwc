@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2019-10-03
+
+* If a file given on input failed to open, it would stop the whole program.
+  Instead, just print the error on opening the file and continue trying the
+  rest of the input files.
+
 ## [1.0.0] - 2019-10-01
 
 * Fix a bug where line mode was showing multiple lines in a single line.
