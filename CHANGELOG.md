@@ -6,11 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.1] - 2019-10-03
+## [1.0.3] - 2020-08-03
+
+* Update dependencies
+
+## [1.0.2] - 2019-10-03
 
 * If a file given on input failed to open, it would stop the whole program.
   Instead, just print the error on opening the file and continue trying the
   rest of the input files.
+
+## [1.0.1] - 2019-10-02
+
+* Update dependencies
 
 ## [1.0.0] - 2019-10-01
 
