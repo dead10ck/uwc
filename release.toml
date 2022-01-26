@@ -1,3 +1,4 @@
+dev-version = true
 dev-version-ext = "dev"
-disable-publish = true
+publish = false
 push-remote = "origin"
