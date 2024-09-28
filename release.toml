@@ -1,4 +1,2 @@
-dev-version = true
-dev-version-ext = "dev"
 publish = false
 push-remote = "origin"
