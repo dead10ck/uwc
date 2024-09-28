@@ -1,5 +1,5 @@
 lines  words  bytes  graphemes  codepoints  filename
-7      59     954    252        368         tests/fixtures/ladle_rat_rotten_hut/input_bengali
+7      59     954    234        368         tests/fixtures/ladle_rat_rotten_hut/input_bengali
 7      57     346    346        346         tests/fixtures/ladle_rat_rotten_hut/input_english
 7      49     471    282        282         tests/fixtures/ladle_rat_rotten_hut/input_hebrew
-21     165    1771   880        996         total
+21     165    1771   862        996         total
