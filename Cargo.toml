@@ -1,5 +1,5 @@
 [package]
-authors = ["Skyler Hawthorne <skyler@dead10ck.com>"]
+authors = ["Skyler Hawthorne <skyler@dead10ck.dev>"]
 categories = ["command-line-utilities", "text-processing"]
 description = "Counts things in unicode text files"
 edition = "2018"
@@ -7,11 +7,10 @@ keywords = ["wc", "unicode", "word", "count"]
 license = "MPL-2.0"
 name = "uwc"
 readme = "README.md"
-repository = "https://gitlab.com/dead10ck/uwc"
+repository = "https://github.com/dead10ck/uwc"
 version = "1.0.8-alpha.1"
 
-[badges]
-[badges.gitlab]
+[badges.github]
 branch = "master"
 repository = "dead10ck/uwc"
 
@@ -27,7 +26,3 @@ structopt = "0.3.26"
 structopt-derive = "0.4.18"
 tabwriter = "1.4.0"
 unicode-segmentation = "1.12.0"
-
-[profile]
-[profile.release]
-lto = true
